@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* =========================
+   🌙 BASE GLOBAL (DARK MODE FIXO)
+========================= */
+html, body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  font-family: var(--font-geist-sans);
+  min-height: 100%;
+}
+
+/* =========================
+   ✨ SCROLL (mais premium)
+========================= */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+/* =========================
+   🧾 INPUTS / SELECTS
+========================= */
+input,
+select,
+textarea {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  outline: none;
+}
+
+/* Foco bonito (efeito app premium) */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+}
+
+/* Placeholder mais suave */
+input::placeholder {
+  color: #94a3b8;
+}
+
+/* =========================
+   🔘 BOTÕES (micro interação)
+========================= */
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* =========================
+   💳 CARDS (efeito premium)
+========================= */
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================
+   📊 TEXTOS AUXILIARES
+========================= */
+.small-text {
+  color: #94a3b8;
+  font-size: 12px;
+}
