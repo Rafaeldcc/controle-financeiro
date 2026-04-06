@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import MenuLateral from "./components/MenuLateral";
+import MenuLateral from "@/components/MenuLateral";
 import { useTransacoes } from "@/hooks/useTransacoes";
 
 export default function Home() {
