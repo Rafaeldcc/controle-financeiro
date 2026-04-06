@@ -20,6 +20,8 @@ export default function Home() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
 
+  const [editando, setEditando] = useState<any>(null);
+
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("saida");
   const [descricao, setDescricao] = useState("");
@@ -35,7 +37,7 @@ export default function Home() {
 
   const [mensagem, setMensagem] = useState("");
 
-  const { transacoes, adicionar, excluir } = useTransacoes(user);
+  const { transacoes, adicionar, excluir, editar } = useTransacoes(user);
   const { recorrentes, adicionar: addRec, togglePago } = useRecorrentes(user);
 
   const meta = 5000;
@@ -129,11 +131,21 @@ export default function Home() {
   );
 
   async function adicionarTransacao() {
-    if (!valor || !categoria) {
-      setMensagem("⚠️ Preencha os campos");
-      return;
-    }
+  if (!valor || !categoria) {
+    setMensagem("⚠️ Preencha os campos");
+    return;
+  }
 
+  if (editando) {
+    await editar(editando.id, {
+      valor: Number(valor),
+      tipo,
+      descricao,
+      categoria,
+    });
+
+    setEditando(null);
+  } else {
     await adicionar({
       valor: Number(valor),
       tipo,
@@ -142,12 +154,22 @@ export default function Home() {
       data: new Date(),
       mes: mesSelecionado,
     });
-
-    setValor("");
-    setDescricao("");
-    setCategoria("");
-    setModalAberto(false);
   }
+
+  setValor("");
+  setDescricao("");
+  setCategoria("");
+  setModalAberto(false);
+}
+
+function abrirEdicao(t: any) {
+  setEditando(t);
+  setValor(t.valor);
+  setTipo(t.tipo);
+  setDescricao(t.descricao);
+  setCategoria(t.categoria);
+  setModalAberto(true);
+}
 
   async function adicionarRecorrente() {
     if (!nomeRec || !valorRec || !diaRec) return;
@@ -201,37 +223,43 @@ export default function Home() {
 
       {/* LISTA BONITA COM EXCLUIR */}
       <div className="space-y-2">
-        {transacoesMes.map((t) => (
-          <div
-            key={t.id}
-            className="bg-slate-800 p-3 rounded-xl flex justify-between items-center"
-          >
-            <div>
-              <p className="font-bold">{t.descricao || "Sem descrição"}</p>
-              <p className="text-xs opacity-60">{t.categoria}</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
-                {formatar(t.valor)}
-              </p>
-
-              <button
-                onClick={() => excluir(t.id)}
-                className="bg-red-500 px-2 rounded"
-              >
-                X
-              </button>
-            </div>
-          </div>
-        ))}
+  {transacoesMes.map((t) => (
+    <div
+      key={t.id}
+      onClick={() => abrirEdicao(t)}
+      className="bg-slate-800 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-700 transition"
+    >
+      <div>
+        <p className="font-bold">{t.descricao || "Sem descrição"}</p>
+        <p className="text-xs opacity-60">{t.categoria}</p>
       </div>
+
+      <div className="flex items-center gap-2">
+        <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
+          {formatar(t.valor)}
+        </p>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            excluir(t.id);
+          }}
+          className="bg-red-500 px-2 rounded"
+        >
+          X
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
 
       <FabButton onClick={() => setModalAberto(true)} />
 
       <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
 
-        <h2 className="font-bold mb-2">Nova Transação</h2>
+        <h2 className="font-bold mb-2">
+          {editando ? "Editar Transação" : "Nova Transação"}
+        </h2>
 
         <input
           placeholder="Valor"
@@ -271,7 +299,7 @@ export default function Home() {
         />
 
         <button onClick={adicionarTransacao} className="bg-green-500 w-full p-2 mb-4">
-          Salvar
+          {editando ? "Atualizar" : "Salvar"}
         </button>
 
         <hr className="my-3" />
