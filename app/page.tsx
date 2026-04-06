@@ -98,7 +98,7 @@ export default function Home() {
   // 🔥 CONTAS DO MÊS
   const contasDoMes = recorrentes.map((r) => {
     const jaExiste = transacoesMes.find(
-      (t) => t.descricao === r.nome
+      (t) => t.recorrenteId === r.id
     );
 
     return {
@@ -170,8 +170,13 @@ export default function Home() {
         categoria,
         data: new Date(),
         mes: mesSelecionado,
+
+        // 🔥 NOVO
+        recorrenteId: editandoRec?.id || null,
       });
     }
+
+    setEditandoRec(null);
 
     setValor("");
     setDescricao("");
@@ -192,6 +197,18 @@ export default function Home() {
     setEditandoRec(r);
     setNomeRec(r.nome);
     setDiaRec(String(r.dia));
+  }
+
+  function pagarConta(conta: any) {
+    setDescricao(conta.nome);
+    setCategoria("Moradia");
+    setTipo("saida");
+    setValor("");
+
+    // 🔥 guarda a conta que está sendo paga
+    setEditandoRec(conta);
+
+    setModalAberto(true);
   }
 
   async function adicionarRecorrente() {
@@ -307,6 +324,7 @@ export default function Home() {
         toggle={togglePago}
         excluir={excluirRec}
         editar={abrirEdicaoRec}
+        onPagar={pagarConta} // 👈 NOVO
       />
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">
