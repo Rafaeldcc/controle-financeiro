@@ -48,8 +48,8 @@ export default function Home() {
       currency: "BRL",
     });
 
-  const categoriasEntrada = ["Salário", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = ["Alimentação", "Transporte", "Moradia", "Lazer"];
+  const categoriasEntrada = ["Salário", "Extra", "Freelance", "Investimentos", "Outros"];
+  const categoriasSaida = ["Alimentação", "Transporte", "Imprestimo", "Cartaão", "Saúde", "Moradia", "Lazer"];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
