@@ -39,7 +39,13 @@ export default function Home() {
   const [mensagem, setMensagem] = useState("");
 
   const { transacoes, adicionar, excluir, editar } = useTransacoes(user);
-  const { recorrentes, adicionar: addRec, togglePago, excluir, editar: editarRec } = useRecorrentes(user);
+  const {
+  recorrentes,
+  adicionar: addRec,
+  togglePago,
+  excluir: excluirRec, // 🔥 AQUI
+  editar: editarRec,
+} = useRecorrentes(user);
 
   const meta = 5000;
 
@@ -242,7 +248,7 @@ function abrirEdicaoRec(r: any) {
       <ListaRecorrentes
         lista={recorrentes}
         toggle={togglePago}
-        excluir={excluir}
+        excluir={excluirRec} // 🔥 AQUI
         editar={abrirEdicaoRec}
       />
 
