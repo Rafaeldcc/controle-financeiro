@@ -39,13 +39,14 @@ export default function Home() {
   const [mensagem, setMensagem] = useState("");
 
   const { transacoes, adicionar, excluir, editar } = useTransacoes(user);
+
   const {
-  recorrentes,
-  adicionar: addRec,
-  togglePago,
-  excluir: excluirRec, // 🔥 AQUI
-  editar: editarRec,
-} = useRecorrentes(user);
+    recorrentes,
+    adicionar: addRec,
+    togglePago,
+    excluir: excluirRec,
+    editar: editarRec,
+  } = useRecorrentes(user);
 
   const meta = 5000;
 
@@ -105,10 +106,14 @@ export default function Home() {
     .reduce((acc, t) => acc + t.valor, 0);
 
   const totalRecorrente = recorrentes
-    .filter((r) => !r.pago)
+    .filter((r) => !r.pago && r.mes === mesSelecionado)
     .reduce((acc, r) => acc + r.valor, 0);
 
   const saldo = entradas - saidas - totalRecorrente;
+
+  const recorrentesMes = recorrentes.filter(
+    (r) => r.mes === mesSelecionado
+  );
 
   const dadosCategorias = Object.values(
     transacoesMes.reduce((acc: any, t: any) => {
@@ -144,53 +149,52 @@ export default function Home() {
   );
 
   async function adicionarTransacao() {
-  if (!valor || !categoria) {
-    setMensagem("⚠️ Preencha os campos");
-    return;
+    if (!valor || !categoria) {
+      setMensagem("⚠️ Preencha os campos");
+      return;
+    }
+
+    if (editando) {
+      await editar(editando.id, {
+        valor: Number(valor),
+        tipo,
+        descricao,
+        categoria,
+      });
+
+      setEditando(null);
+    } else {
+      await adicionar({
+        valor: Number(valor),
+        tipo,
+        descricao,
+        categoria,
+        data: new Date(),
+        mes: mesSelecionado,
+      });
+    }
+
+    setValor("");
+    setDescricao("");
+    setCategoria("");
+    setModalAberto(false);
   }
 
-  if (editando) {
-    await editar(editando.id, {
-      valor: Number(valor),
-      tipo,
-      descricao,
-      categoria,
-    });
-
-    setEditando(null);
-  } else {
-    await adicionar({
-      valor: Number(valor),
-      tipo,
-      descricao,
-      categoria,
-      data: new Date(),
-      mes: mesSelecionado,
-    });
+  function abrirEdicao(t: any) {
+    setEditando(t);
+    setValor(String(t.valor));
+    setTipo(t.tipo);
+    setDescricao(t.descricao);
+    setCategoria(t.categoria);
+    setModalAberto(true);
   }
 
-  setValor("");
-  setDescricao("");
-  setCategoria("");
-  setModalAberto(false);
-}
-
-function abrirEdicao(t: any) {
-  setEditando(t);
-  setValor(String(t.valor));
-  setTipo(t.tipo);
-  setDescricao(t.descricao);
-  setCategoria(t.categoria);
-  setModalAberto(true);
-}
-
-// 👇 ADICIONE AQUI
-function abrirEdicaoRec(r: any) {
-  setEditandoRec(r);
-  setNomeRec(r.nome);
-  setValorRec(String(r.valor));
-  setDiaRec(String(r.dia));
-}
+  function abrirEdicaoRec(r: any) {
+    setEditandoRec(r);
+    setNomeRec(r.nome);
+    setValorRec(String(r.valor));
+    setDiaRec(String(r.dia));
+  }
 
   async function adicionarRecorrente() {
     const valorNumero = Number(valorRec);
@@ -255,9 +259,9 @@ function abrirEdicaoRec(r: any) {
       <MetaFinanceira saldo={saldo} meta={meta} />
 
       <ListaRecorrentes
-        lista={recorrentes}
+        lista={recorrentesMes}
         toggle={togglePago}
-        excluir={excluirRec} // 🔥 AQUI
+        excluir={excluirRec}
         editar={abrirEdicaoRec}
       />
 
@@ -268,37 +272,36 @@ function abrirEdicaoRec(r: any) {
 
       <Insights entradas={entradas} saidas={saidas} />
 
-      {/* LISTA BONITA COM EXCLUIR */}
       <div className="space-y-2">
-  {transacoesMes.map((t) => (
-    <div
-      key={t.id}
-      onClick={() => abrirEdicao(t)}
-      className="bg-slate-800 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-700 transition"
-    >
-      <div>
-        <p className="font-bold">{t.descricao || "Sem descrição"}</p>
-        <p className="text-xs opacity-60">{t.categoria}</p>
-      </div>
+        {transacoesMes.map((t) => (
+          <div
+            key={t.id}
+            onClick={() => abrirEdicao(t)}
+            className="bg-slate-800 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-700 transition"
+          >
+            <div>
+              <p className="font-bold">{t.descricao || "Sem descrição"}</p>
+              <p className="text-xs opacity-60">{t.categoria}</p>
+            </div>
 
-      <div className="flex items-center gap-2">
-        <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
-          {formatar(t.valor)}
-        </p>
+            <div className="flex items-center gap-2">
+              <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
+                {formatar(t.valor)}
+              </p>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            excluir(t.id);
-          }}
-          className="bg-red-500 px-2 rounded"
-        >
-          X
-        </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  excluir(t.id);
+                }}
+                className="bg-red-500 px-2 rounded"
+              >
+                X
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
-  ))}
-</div>
 
       <FabButton onClick={() => setModalAberto(true)} />
 
