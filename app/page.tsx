@@ -8,9 +8,15 @@ import { useTransacoes } from "@/hooks/useTransacoes";
 import GraficoCategorias from "@/components/GraficoCategorias";
 import GraficoLinha from "@/components/GraficoLinha";
 
+import FabButton from "@/components/FabButton";
+import MetaFinanceira from "@/components/MetaFinanceira";
+import Insights from "@/components/Insights";
+import Modal from "@/components/Modal";
+
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [modalAberto, setModalAberto] = useState(false);
 
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("saida");
@@ -23,6 +29,8 @@ export default function Home() {
   const [mensagem, setMensagem] = useState("");
 
   const { transacoes, adicionar, excluir } = useTransacoes(user);
+
+  const meta = 5000;
 
   const formatar = (v: number) =>
     v.toLocaleString("pt-BR", {
@@ -68,7 +76,7 @@ export default function Home() {
 
   const saldo = entradas - saidas;
 
-  // 📊 GRAFICO CATEGORIA (CORRIGIDO)
+  // 📊 GRAFICOS
   const dadosCategorias = Object.values(
     transacoesMes.reduce((acc: any, t: any) => {
       if (t.tipo === "saida") {
@@ -82,7 +90,6 @@ export default function Home() {
     }, {})
   );
 
-  // 📈 GRAFICO LINHA (AGRUPADO POR DIA)
   const dadosLinhaMap: any = {};
 
   transacoesMes.forEach((t: any) => {
@@ -136,7 +143,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4">
 
-      {/* MENU */}
       <MenuLateral aberto={menuAberto} fechar={() => setMenuAberto(false)} />
 
       {/* HEADER */}
@@ -154,7 +160,6 @@ export default function Home() {
       {/* SALDO */}
       <div className="bg-gradient-to-br from-green-500 to-emerald-700 p-6 rounded-3xl shadow-xl mb-4">
         <p className="text-sm opacity-80">Saldo disponível</p>
-
         <h1 className="text-4xl font-bold mt-1">{formatar(saldo)}</h1>
 
         <div className="flex justify-between mt-4 text-sm opacity-90">
@@ -165,11 +170,17 @@ export default function Home() {
         <div className="mt-4 text-xs opacity-70">{user.email}</div>
       </div>
 
-      {/* GRÁFICOS 🔥 */}
+      {/* META */}
+      <MetaFinanceira saldo={saldo} meta={meta} />
+
+      {/* GRÁFICOS */}
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         <GraficoCategorias dados={dadosCategorias} />
         <GraficoLinha dados={dadosLinha} />
       </div>
+
+      {/* INSIGHTS */}
+      <Insights entradas={entradas} saidas={saidas} />
 
       {/* ALERTA */}
       {mensagem && (
@@ -178,19 +189,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* IA FINANCEIRA */}
-      <div className="bg-slate-800 p-3 rounded-xl mb-4 text-sm">
-        {saidas > entradas && (
-          <p className="text-red-400">⚠️ Você está gastando mais do que ganha</p>
-        )}
-        {saidas > entradas * 0.7 && (
-          <p className="text-yellow-400">💡 Seus gastos estão altos</p>
-        )}
-        {saldo > 0 && (
-          <p className="text-green-400">👍 Você está no controle</p>
-        )}
-      </div>
-
       {/* FILTRO */}
       <input
         type="month"
@@ -198,56 +196,6 @@ export default function Home() {
         onChange={(e) => setMesSelecionado(e.target.value)}
         className="bg-slate-800 p-3 rounded-xl mb-4 w-full"
       />
-
-      {/* FORM */}
-      <div className="bg-slate-800 p-4 rounded-2xl mb-4 shadow">
-
-        <input
-          type="number"
-          placeholder="Valor"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded-xl"
-        />
-
-        <select
-          value={tipo}
-          onChange={(e) => {
-            setTipo(e.target.value);
-            setCategoria("");
-          }}
-          className="bg-slate-700 p-3 w-full mb-2 rounded-xl"
-        >
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
-
-        <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded-xl"
-        >
-          <option value="">Categoria</option>
-          {categorias.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-
-        <input
-          type="text"
-          placeholder="Descrição"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded-xl"
-        />
-
-        <button
-          onClick={adicionarTransacao}
-          className="bg-green-500 w-full p-3 rounded-xl font-bold hover:scale-105 transition"
-        >
-          Salvar
-        </button>
-      </div>
 
       {/* LISTA */}
       <div className="space-y-2">
@@ -262,13 +210,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
-              <p
-                className={
-                  t.tipo === "entrada"
-                    ? "text-green-400 font-bold"
-                    : "text-red-400 font-bold"
-                }
-              >
+              <p className={t.tipo === "entrada" ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
                 {formatar(t.valor)}
               </p>
 
@@ -282,6 +224,62 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      {/* BOTÃO FLUTUANTE */}
+      <FabButton onClick={() => setModalAberto(true)} />
+
+      {/* MODAL */}
+      <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
+
+        <input
+          placeholder="Valor"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="bg-slate-700 p-3 w-full mb-2 rounded"
+        />
+
+        <select
+          value={tipo}
+          onChange={(e) => {
+            setTipo(e.target.value);
+            setCategoria("");
+          }}
+          className="bg-slate-700 p-3 w-full mb-2 rounded"
+        >
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="bg-slate-700 p-3 w-full mb-2 rounded"
+        >
+          <option value="">Categoria</option>
+          {categorias.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+
+        <input
+          placeholder="Descrição"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="bg-slate-700 p-3 w-full mb-2 rounded"
+        />
+
+        <button
+          onClick={() => {
+            adicionarTransacao();
+            setModalAberto(false);
+          }}
+          className="bg-green-500 w-full p-3 rounded font-bold"
+        >
+          Salvar
+        </button>
+
+      </Modal>
+
     </div>
   );
 }
