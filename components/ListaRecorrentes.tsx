@@ -3,6 +3,7 @@ export default function ListaRecorrentes({
   toggle,
   excluir,
   editar,
+  onPagar,
 }: any) {
   const hoje = new Date().getDate();
 
@@ -18,9 +19,10 @@ export default function ListaRecorrentes({
             key={r.id}
             className="flex justify-between items-center mb-2"
           >
+            {/* 🔥 CLIQUE AGORA PAGA */}
             <div
-              className="cursor-pointer"
-              onClick={() => editar(r)} // 🔥 clicar edita
+              className="cursor-pointer flex-1"
+              onClick={() => onPagar(r)}
             >
               <p className="font-bold">{r.nome}</p>
               <p className="text-xs opacity-60">
@@ -40,6 +42,14 @@ export default function ListaRecorrentes({
                 }`}
               >
                 {r.pago ? "Pago" : atrasado ? "Atrasado" : "Pendente"}
+              </button>
+
+              {/* 👇 editar separado */}
+              <button
+                onClick={() => editar(r)}
+                className="bg-blue-500 px-2 rounded"
+              >
+                ✏️
               </button>
 
               <button

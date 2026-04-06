@@ -98,7 +98,7 @@ export default function Home() {
   // 🔥 CONTAS DO MÊS
   const contasDoMes = recorrentes.map((r) => {
     const jaExiste = transacoesMes.find(
-      (t) => t.recorrenteId === r.id
+      (t) => t.descricao === r.nome
     );
 
     return {
