@@ -21,6 +21,7 @@ export default function Home() {
   const [modalAberto, setModalAberto] = useState(false);
 
   const [editando, setEditando] = useState<any>(null);
+  const [editandoRec, setEditandoRec] = useState<any>(null);
 
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("saida");
@@ -38,7 +39,7 @@ export default function Home() {
   const [mensagem, setMensagem] = useState("");
 
   const { transacoes, adicionar, excluir, editar } = useTransacoes(user);
-  const { recorrentes, adicionar: addRec, togglePago } = useRecorrentes(user);
+  const { recorrentes, adicionar: addRec, togglePago, excluir, editar: editarRec } = useRecorrentes(user);
 
   const meta = 5000;
 
@@ -62,12 +63,18 @@ export default function Home() {
 
   // 🔁 RECORRENTE AUTOMÁTICO
   useEffect(() => {
-    if (!user || recorrentes.length === 0) return;
+    if (!user) return;
 
     const mesAtual = new Date().toISOString().slice(0, 7);
 
     recorrentes.forEach(async (r: any) => {
-      if (r.mes !== mesAtual) {
+      const existe = recorrentes.find(
+        (x: any) =>
+          x.nome === r.nome &&
+          x.mes === mesAtual
+      );
+
+      if (!existe) {
         await addRec({
           nome: r.nome,
           valor: r.valor,
@@ -164,23 +171,43 @@ export default function Home() {
 
 function abrirEdicao(t: any) {
   setEditando(t);
-  setValor(t.valor);
+  setValor(String(t.valor));
   setTipo(t.tipo);
   setDescricao(t.descricao);
   setCategoria(t.categoria);
   setModalAberto(true);
 }
 
-  async function adicionarRecorrente() {
-    if (!nomeRec || !valorRec || !diaRec) return;
+// 👇 ADICIONE AQUI
+function abrirEdicaoRec(r: any) {
+  setEditandoRec(r);
+  setNomeRec(r.nome);
+  setValorRec(String(r.valor));
+  setDiaRec(String(r.dia));
+}
 
-    await addRec({
-      nome: nomeRec,
-      valor: Number(valorRec),
-      dia: Number(diaRec),
-      pago: false,
-      mes: mesSelecionado,
-    });
+  async function adicionarRecorrente() {
+    const valorNumero = Number(valorRec);
+
+    if (!nomeRec || isNaN(valorNumero) || !diaRec) return;
+
+    if (editandoRec) {
+      await editarRec(editandoRec.id, {
+        nome: nomeRec,
+        valor: valorNumero,
+        dia: Number(diaRec),
+      });
+
+      setEditandoRec(null);
+    } else {
+      await addRec({
+        nome: nomeRec,
+        valor: valorNumero,
+        dia: Number(diaRec),
+        pago: false,
+        mes: mesSelecionado,
+      });
+    }
 
     setNomeRec("");
     setValorRec("");
@@ -216,6 +243,7 @@ function abrirEdicao(t: any) {
         lista={recorrentes}
         toggle={togglePago}
         excluir={excluir}
+        editar={abrirEdicaoRec}
       />
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">

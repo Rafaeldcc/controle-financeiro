@@ -54,17 +54,28 @@ export function useRecorrentes(user: any) {
     );
   }
 
-  // ❌ EXCLUIR (🔥 NOVO)
+  // ❌ EXCLUIR
   async function excluir(id: string) {
     if (!user) return;
 
     await deletarRecorrente(user.uid, id);
   }
 
+  // ✏️ EDITAR (🔥 NOVO)
+  async function editar(id: string, data: Partial<Recorrente>) {
+    if (!user) return;
+
+    await updateDoc(
+      doc(db, "usuarios", user.uid, "recorrentes", id),
+      data
+    );
+  }
+
   return {
     recorrentes,
     adicionar,
     togglePago,
-    excluir, // 🔥 ADICIONADO
+    excluir,
+    editar, // 🔥 NOVO
   };
 }

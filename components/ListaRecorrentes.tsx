@@ -1,4 +1,9 @@
-export default function ListaRecorrentes({ lista, toggle, excluir }: any) {
+export default function ListaRecorrentes({
+  lista,
+  toggle,
+  excluir,
+  editar,
+}: any) {
   const hoje = new Date().getDate();
 
   return (
@@ -13,7 +18,10 @@ export default function ListaRecorrentes({ lista, toggle, excluir }: any) {
             key={r.id}
             className="flex justify-between items-center mb-2"
           >
-            <div>
+            <div
+              className="cursor-pointer"
+              onClick={() => editar(r)} // 🔥 clicar edita
+            >
               <p className="font-bold">{r.nome}</p>
               <p className="text-xs opacity-60">
                 Dia {r.dia} • R$ {Number(r.valor) || 0}
@@ -21,7 +29,6 @@ export default function ListaRecorrentes({ lista, toggle, excluir }: any) {
             </div>
 
             <div className="flex gap-2">
-
               <button
                 onClick={() => toggle(r.id, r.pago)}
                 className={`px-3 py-1 rounded text-sm ${
@@ -35,14 +42,12 @@ export default function ListaRecorrentes({ lista, toggle, excluir }: any) {
                 {r.pago ? "Pago" : atrasado ? "Atrasado" : "Pendente"}
               </button>
 
-              {/* 🔥 BOTÃO EXCLUIR */}
               <button
                 onClick={() => excluir(r.id)}
                 className="bg-red-600 px-2 rounded"
               >
                 X
               </button>
-
             </div>
           </div>
         );
