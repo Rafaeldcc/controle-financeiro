@@ -1,19 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db, auth } from "@/lib/firebase";
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import MenuLateral from "./components/MenuLateral";
+import { useTransacoes } from "@/hooks/useTransacoes";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -23,13 +14,13 @@ export default function Home() {
   const [tipo, setTipo] = useState("saida");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
-
-  const [transacoes, setTransacoes] = useState<any[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().toISOString().slice(0, 7)
   );
 
   const [mensagem, setMensagem] = useState("");
+
+  const { transacoes, adicionar, excluir } = useTransacoes(user);
 
   const formatar = (v: number) =>
     v.toLocaleString("pt-BR", {
@@ -38,7 +29,15 @@ export default function Home() {
     });
 
   const categoriasEntrada = ["Salário", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = ["Alimentação", "Transporte", "Empréstimo", "Cartão", "Médico","Moradia", "Lazer"];
+  const categoriasSaida = [
+    "Alimentação",
+    "Transporte",
+    "Empréstimo",
+    "Cartão",
+    "Médico",
+    "Moradia",
+    "Lazer",
+  ];
 
   const categorias = tipo === "entrada" ? categoriasEntrada : categoriasSaida;
 
@@ -52,59 +51,10 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  // 🔥 BUSCAR DADOS
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, "usuarios", user.uid, "transacoes"),
-      orderBy("data", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista: any[] = [];
-      snapshot.forEach((doc) => {
-        lista.push({ id: doc.id, ...doc.data() });
-      });
-      setTransacoes(lista);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  // ➕ ADICIONAR
-  async function adicionarTransacao() {
-    if (!valor || !categoria) {
-      setMensagem("⚠️ Preencha todos os campos");
-      return;
-    }
-
-    await addDoc(
-      collection(db, "usuarios", user.uid, "transacoes"),
-      {
-        valor: Number(valor),
-        tipo,
-        descricao,
-        categoria,
-        data: new Date(),
-        mes: mesSelecionado,
-      }
-    );
-
-    setValor("");
-    setDescricao("");
-    setCategoria("");
-
-    setMensagem("✅ Transação salva!");
-    setTimeout(() => setMensagem(""), 2000);
-  }
-
-  // ❌ EXCLUIR
-  async function excluirTransacao(id: string) {
-    await deleteDoc(doc(db, "usuarios", user.uid, "transacoes", id));
-  }
-
-  const transacoesMes = transacoes.filter((t) => t.mes === mesSelecionado);
+  // 📊 FILTRO
+  const transacoesMes = transacoes.filter(
+    (t) => t.mes === mesSelecionado
+  );
 
   const entradas = transacoesMes
     .filter((t) => t.tipo === "entrada")
@@ -115,6 +65,34 @@ export default function Home() {
     .reduce((acc, t) => acc + t.valor, 0);
 
   const saldo = entradas - saidas;
+
+  // ➕ ADICIONAR
+  async function adicionarTransacao() {
+    if (!valor || !categoria) {
+      setMensagem("⚠️ Preencha todos os campos");
+      return;
+    }
+
+    try {
+      await adicionar({
+        valor: Number(valor),
+        tipo,
+        descricao,
+        categoria,
+        data: new Date(),
+        mes: mesSelecionado,
+      });
+
+      setValor("");
+      setDescricao("");
+      setCategoria("");
+
+      setMensagem("✅ Transação salva!");
+      setTimeout(() => setMensagem(""), 2000);
+    } catch (error) {
+      setMensagem("❌ Erro ao salvar");
+    }
+  }
 
   if (!user) return <p className="text-white">Carregando...</p>;
 
@@ -152,7 +130,7 @@ export default function Home() {
         <div className="mt-4 text-xs opacity-70">{user.email}</div>
       </div>
 
-      {/* ALERTA INTELIGENTE */}
+      {/* ALERTA */}
       {mensagem && (
         <div className="mb-4 bg-slate-800 p-3 rounded-xl text-center">
           {mensagem}
@@ -172,7 +150,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* FILTRO MÊS */}
+      {/* FILTRO */}
       <input
         type="month"
         value={mesSelecionado}
@@ -254,7 +232,7 @@ export default function Home() {
               </p>
 
               <button
-                onClick={() => excluirTransacao(t.id)}
+                onClick={() => excluir(t.id)}
                 className="bg-red-500 px-2 rounded"
               >
                 X
