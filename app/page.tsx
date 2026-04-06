@@ -233,6 +233,15 @@ function abrirEdicaoRec(r: any) {
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
+      <div className="flex gap-2 mb-4">
+        <input
+          type="month"
+          value={mesSelecionado}
+          onChange={(e) => setMesSelecionado(e.target.value)}
+          className="bg-slate-800 text-white px-3 py-2 rounded"
+        />
+      </div>
+
       {totalRecorrente > 0 && (
         <div className="bg-red-500 p-3 rounded-xl mb-4">
           💳 Contas pendentes: {formatar(totalRecorrente)}
