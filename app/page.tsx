@@ -12,6 +12,8 @@ import FabButton from "@/components/FabButton";
 import MetaFinanceira from "@/components/MetaFinanceira";
 import Insights from "@/components/Insights";
 import Modal from "@/components/Modal";
+import { useRecorrentes } from "@/hooks/useRecorrentes";
+import ListaRecorrentes from "@/components/ListaRecorrentes";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -22,6 +24,12 @@ export default function Home() {
   const [tipo, setTipo] = useState("saida");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
+
+  // ✅ STATES RECORRENTES (FALTAVA)
+  const [nomeRec, setNomeRec] = useState("");
+  const [valorRec, setValorRec] = useState("");
+  const [diaRec, setDiaRec] = useState("");
+
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().toISOString().slice(0, 7)
   );
@@ -29,6 +37,7 @@ export default function Home() {
   const [mensagem, setMensagem] = useState("");
 
   const { transacoes, adicionar, excluir } = useTransacoes(user);
+  const { recorrentes, adicionar: addRec, togglePago } = useRecorrentes(user);
 
   const meta = 5000;
 
@@ -51,7 +60,6 @@ export default function Home() {
 
   const categorias = tipo === "entrada" ? categoriasEntrada : categoriasSaida;
 
-  // 🔐 AUTH
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
       if (!usuario) window.location.href = "/login";
@@ -61,7 +69,6 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  // 📊 FILTRO
   const transacoesMes = transacoes.filter(
     (t) => t.mes === mesSelecionado
   );
@@ -76,7 +83,6 @@ export default function Home() {
 
   const saldo = entradas - saidas;
 
-  // 📊 GRAFICOS
   const dadosCategorias = Object.values(
     transacoesMes.reduce((acc: any, t: any) => {
       if (t.tipo === "saida") {
@@ -110,7 +116,6 @@ export default function Home() {
     (a: any, b: any) => a.mes - b.mes
   );
 
-  // ➕ ADICIONAR
   async function adicionarTransacao() {
     if (!valor || !categoria) {
       setMensagem("⚠️ Preencha todos os campos");
@@ -133,9 +138,32 @@ export default function Home() {
 
       setMensagem("✅ Transação salva!");
       setTimeout(() => setMensagem(""), 2000);
-    } catch (error) {
+    } catch {
       setMensagem("❌ Erro ao salvar");
     }
+  }
+
+  // ✅ FUNÇÃO AGORA NO LUGAR CERTO
+  async function adicionarRecorrente() {
+    if (!nomeRec || !valorRec || !diaRec) {
+      setMensagem("⚠️ Preencha os campos da despesa fixa");
+      return;
+    }
+
+    await addRec({
+      nome: nomeRec,
+      valor: Number(valorRec),
+      dia: Number(diaRec),
+      pago: false,
+      mes: mesSelecionado,
+    });
+
+    setNomeRec("");
+    setValorRec("");
+    setDiaRec("");
+
+    setMensagem("✅ Recorrente salva!");
+    setTimeout(() => setMensagem(""), 2000);
   }
 
   if (!user) return <p className="text-white">Carregando...</p>;
@@ -145,137 +173,52 @@ export default function Home() {
 
       <MenuLateral aberto={menuAberto} fechar={() => setMenuAberto(false)} />
 
-      {/* HEADER */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => setMenuAberto(true)} className="text-2xl">☰</button>
-        <h1 className="font-bold">Dashboard</h1>
-        <button
-          onClick={() => signOut(auth)}
-          className="text-sm bg-red-500 px-3 py-1 rounded"
-        >
-          Sair
-        </button>
+        <button onClick={() => setMenuAberto(true)}>☰</button>
+        <h1>Dashboard</h1>
+        <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
-      {/* SALDO */}
-      <div className="bg-gradient-to-br from-green-500 to-emerald-700 p-6 rounded-3xl shadow-xl mb-4">
-        <p className="text-sm opacity-80">Saldo disponível</p>
-        <h1 className="text-4xl font-bold mt-1">{formatar(saldo)}</h1>
-
-        <div className="flex justify-between mt-4 text-sm opacity-90">
-          <span>Entradas: {formatar(entradas)}</span>
-          <span>Saídas: {formatar(saidas)}</span>
-        </div>
-
-        <div className="mt-4 text-xs opacity-70">{user.email}</div>
+      <div className="bg-green-600 p-4 rounded-xl mb-4">
+        <h1>{formatar(saldo)}</h1>
       </div>
 
-      {/* META */}
       <MetaFinanceira saldo={saldo} meta={meta} />
 
-      {/* GRÁFICOS */}
+      <ListaRecorrentes lista={recorrentes} toggle={togglePago} />
+
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         <GraficoCategorias dados={dadosCategorias} />
         <GraficoLinha dados={dadosLinha} />
       </div>
 
-      {/* INSIGHTS */}
       <Insights entradas={entradas} saidas={saidas} />
 
-      {/* ALERTA */}
-      {mensagem && (
-        <div className="mb-4 bg-slate-800 p-3 rounded-xl text-center">
-          {mensagem}
-        </div>
-      )}
-
-      {/* FILTRO */}
-      <input
-        type="month"
-        value={mesSelecionado}
-        onChange={(e) => setMesSelecionado(e.target.value)}
-        className="bg-slate-800 p-3 rounded-xl mb-4 w-full"
-      />
-
-      {/* LISTA */}
       <div className="space-y-2">
         {transacoesMes.map((t) => (
-          <div
-            key={t.id}
-            className="bg-slate-800 p-3 rounded-xl flex justify-between items-center shadow"
-          >
-            <div>
-              <p className="font-bold">{t.descricao}</p>
-              <p className="text-xs opacity-60">{t.categoria}</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <p className={t.tipo === "entrada" ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
-                {formatar(t.valor)}
-              </p>
-
-              <button
-                onClick={() => excluir(t.id)}
-                className="bg-red-500 px-2 rounded"
-              >
-                X
-              </button>
-            </div>
+          <div key={t.id}>
+            {t.descricao} - {formatar(t.valor)}
           </div>
         ))}
       </div>
 
-      {/* BOTÃO FLUTUANTE */}
       <FabButton onClick={() => setModalAberto(true)} />
 
-      {/* MODAL */}
       <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
 
-        <input
-          placeholder="Valor"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded"
-        />
+        <input value={valor} onChange={(e) => setValor(e.target.value)} />
+        <input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
 
-        <select
-          value={tipo}
-          onChange={(e) => {
-            setTipo(e.target.value);
-            setCategoria("");
-          }}
-          className="bg-slate-700 p-3 w-full mb-2 rounded"
-        >
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
+        <button onClick={adicionarTransacao}>Salvar</button>
 
-        <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded"
-        >
-          <option value="">Categoria</option>
-          {categorias.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
+        <hr className="my-4" />
 
-        <input
-          placeholder="Descrição"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          className="bg-slate-700 p-3 w-full mb-2 rounded"
-        />
+        <input value={nomeRec} onChange={(e) => setNomeRec(e.target.value)} />
+        <input value={valorRec} onChange={(e) => setValorRec(e.target.value)} />
+        <input value={diaRec} onChange={(e) => setDiaRec(e.target.value)} />
 
-        <button
-          onClick={() => {
-            adicionarTransacao();
-            setModalAberto(false);
-          }}
-          className="bg-green-500 w-full p-3 rounded font-bold"
-        >
-          Salvar
+        <button onClick={adicionarRecorrente}>
+          Salvar Recorrente
         </button>
 
       </Modal>
