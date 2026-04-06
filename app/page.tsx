@@ -5,6 +5,8 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import MenuLateral from "@/components/MenuLateral";
 import { useTransacoes } from "@/hooks/useTransacoes";
+import GraficoCategorias from "@/components/GraficoCategorias";
+import GraficoLinha from "@/components/GraficoLinha";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -66,6 +68,41 @@ export default function Home() {
 
   const saldo = entradas - saidas;
 
+  // 📊 GRAFICO CATEGORIA (CORRIGIDO)
+  const dadosCategorias = Object.values(
+    transacoesMes.reduce((acc: any, t: any) => {
+      if (t.tipo === "saida") {
+        acc[t.categoria] = acc[t.categoria] || {
+          categoria: t.categoria,
+          valor: 0,
+        };
+        acc[t.categoria].valor += t.valor;
+      }
+      return acc;
+    }, {})
+  );
+
+  // 📈 GRAFICO LINHA (AGRUPADO POR DIA)
+  const dadosLinhaMap: any = {};
+
+  transacoesMes.forEach((t: any) => {
+    const data = t.data?.seconds
+      ? new Date(t.data.seconds * 1000)
+      : new Date();
+
+    const dia = data.getDate();
+
+    if (!dadosLinhaMap[dia]) {
+      dadosLinhaMap[dia] = { mes: dia, valor: 0 };
+    }
+
+    dadosLinhaMap[dia].valor += t.valor;
+  });
+
+  const dadosLinha = Object.values(dadosLinhaMap).sort(
+    (a: any, b: any) => a.mes - b.mes
+  );
+
   // ➕ ADICIONAR
   async function adicionarTransacao() {
     if (!valor || !categoria) {
@@ -105,9 +142,7 @@ export default function Home() {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setMenuAberto(true)} className="text-2xl">☰</button>
-
         <h1 className="font-bold">Dashboard</h1>
-
         <button
           onClick={() => signOut(auth)}
           className="text-sm bg-red-500 px-3 py-1 rounded"
@@ -128,6 +163,12 @@ export default function Home() {
         </div>
 
         <div className="mt-4 text-xs opacity-70">{user.email}</div>
+      </div>
+
+      {/* GRÁFICOS 🔥 */}
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <GraficoCategorias dados={dadosCategorias} />
+        <GraficoLinha dados={dadosLinha} />
       </div>
 
       {/* ALERTA */}
