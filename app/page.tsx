@@ -29,7 +29,6 @@ export default function Home() {
   const [categoria, setCategoria] = useState("");
 
   const [nomeRec, setNomeRec] = useState("");
-  const [valorRec, setValorRec] = useState("");
   const [diaRec, setDiaRec] = useState("");
 
   const [mesSelecionado, setMesSelecionado] = useState(
@@ -56,8 +55,24 @@ export default function Home() {
       currency: "BRL",
     });
 
-  const categoriasEntrada = ["Salário", "Extra", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = ["Alimentação", "Transporte", "Empréstimo", "Cartão", "Telefone", "Saúde", "Moradia", "Lazer"];
+  const categoriasEntrada = [
+    "Salário",
+    "Extra",
+    "Freelance",
+    "Investimentos",
+    "Outros",
+  ];
+
+  const categoriasSaida = [
+    "Alimentação",
+    "Transporte",
+    "Empréstimo",
+    "Cartão",
+    "Telefone",
+    "Saúde",
+    "Moradia",
+    "Lazer",
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
@@ -67,31 +82,6 @@ export default function Home() {
 
     return () => unsubscribe();
   }, []);
-
-  // 🔁 RECORRENTE AUTOMÁTICO
-  useEffect(() => {
-    if (!user) return;
-
-    const mesAtual = new Date().toISOString().slice(0, 7);
-
-    recorrentes.forEach(async (r: any) => {
-      const existe = recorrentes.find(
-        (x: any) =>
-          x.nome === r.nome &&
-          x.mes === mesAtual
-      );
-
-      if (!existe) {
-        await addRec({
-          nome: r.nome,
-          valor: r.valor,
-          dia: r.dia,
-          pago: false,
-          mes: mesAtual,
-        });
-      }
-    });
-  }, [recorrentes]);
 
   const transacoesMes = transacoes.filter(
     (t) => t.mes === mesSelecionado
@@ -105,12 +95,7 @@ export default function Home() {
     .filter((t) => t.tipo === "saida")
     .reduce((acc, t) => acc + t.valor, 0);
 
-  const totalRecorrente = recorrentes
-    .filter((r) => !r.pago && r.mes === mesSelecionado)
-    .reduce((acc, r) => acc + r.valor, 0);
-
-  const saldo = entradas - saidas - totalRecorrente;
-
+  // 🔥 CONTAS DO MÊS
   const contasDoMes = recorrentes.map((r) => {
     const jaExiste = transacoesMes.find(
       (t) => t.descricao === r.nome
@@ -123,9 +108,11 @@ export default function Home() {
     };
   });
 
-  const recorrentesMes = recorrentes.filter(
-    (r) => r.mes === mesSelecionado
-  );
+  const totalRecorrente = contasDoMes
+    .filter((r) => !r.pago)
+    .reduce((acc, r) => acc + r.valor, 0);
+
+  const saldo = entradas - saidas - totalRecorrente;
 
   const dadosCategorias = Object.values(
     transacoesMes.reduce((acc: any, t: any) => {
@@ -204,7 +191,6 @@ export default function Home() {
   function abrirEdicaoRec(r: any) {
     setEditandoRec(r);
     setNomeRec(r.nome);
-    setValorRec(String(r.valor));
     setDiaRec(String(r.dia));
   }
 
@@ -226,11 +212,14 @@ export default function Home() {
     }
 
     setNomeRec("");
-    setValorRec("");
     setDiaRec("");
   }
 
-  async function adicionarParcelado(nome: string, valor: number, parcelas: number) {
+  async function adicionarParcelado(
+    nome: string,
+    valor: number,
+    parcelas: number
+  ) {
     for (let i = 0; i < parcelas; i++) {
       const data = new Date();
       data.setMonth(data.getMonth() + i);
@@ -250,7 +239,6 @@ export default function Home() {
 
   function calcularPrevisao() {
     let saldoAtual = saldo;
-
     const futuros = [];
 
     for (let i = 1; i <= 3; i++) {
@@ -271,10 +259,7 @@ export default function Home() {
 
       saldoAtual += entradasFuturas - saidasFuturas;
 
-      futuros.push({
-        mes,
-        saldo: saldoAtual,
-      });
+      futuros.push({ mes, saldo: saldoAtual });
     }
 
     return futuros;
@@ -375,7 +360,6 @@ export default function Home() {
       <FabButton onClick={() => setModalAberto(true)} />
 
       <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
-
         <h2 className="font-bold mb-2">
           {editando ? "Editar Transação" : "Nova Transação"}
         </h2>
@@ -433,13 +417,6 @@ export default function Home() {
         />
 
         <input
-          placeholder="Valor"
-          value={valorRec}
-          onChange={(e) => setValorRec(e.target.value)}
-          className="bg-slate-700 p-2 w-full mb-2"
-        />
-
-        <input
           placeholder="Dia"
           value={diaRec}
           onChange={(e) => setDiaRec(e.target.value)}
@@ -449,7 +426,6 @@ export default function Home() {
         <button onClick={adicionarRecorrente} className="bg-blue-500 w-full p-2">
           Salvar Recorrente
         </button>
-
       </Modal>
 
     </div>
