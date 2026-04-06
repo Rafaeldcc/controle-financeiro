@@ -111,6 +111,18 @@ export default function Home() {
 
   const saldo = entradas - saidas - totalRecorrente;
 
+  const contasDoMes = recorrentes.map((r) => {
+    const jaExiste = transacoesMes.find(
+      (t) => t.descricao === r.nome
+    );
+
+    return {
+      ...r,
+      valor: jaExiste ? jaExiste.valor : 0,
+      pago: !!jaExiste,
+    };
+  });
+
   const recorrentesMes = recorrentes.filter(
     (r) => r.mes === mesSelecionado
   );
@@ -197,14 +209,11 @@ export default function Home() {
   }
 
   async function adicionarRecorrente() {
-    const valorNumero = Number(valorRec);
-
-    if (!nomeRec || isNaN(valorNumero) || !diaRec) return;
+    if (!nomeRec || !diaRec) return;
 
     if (editandoRec) {
       await editarRec(editandoRec.id, {
         nome: nomeRec,
-        valor: valorNumero,
         dia: Number(diaRec),
       });
 
@@ -212,10 +221,7 @@ export default function Home() {
     } else {
       await addRec({
         nome: nomeRec,
-        valor: valorNumero,
         dia: Number(diaRec),
-        pago: false,
-        mes: mesSelecionado,
       });
     }
 
@@ -223,6 +229,58 @@ export default function Home() {
     setValorRec("");
     setDiaRec("");
   }
+
+  async function adicionarParcelado(nome: string, valor: number, parcelas: number) {
+    for (let i = 0; i < parcelas; i++) {
+      const data = new Date();
+      data.setMonth(data.getMonth() + i);
+
+      const mes = data.toISOString().slice(0, 7);
+
+      await adicionar({
+        descricao: `${nome} (${i + 1}/${parcelas})`,
+        valor,
+        tipo: "saida",
+        categoria: "Parcelado",
+        mes,
+        data: new Date(),
+      });
+    }
+  }
+
+  function calcularPrevisao() {
+    let saldoAtual = saldo;
+
+    const futuros = [];
+
+    for (let i = 1; i <= 3; i++) {
+      const data = new Date(mesSelecionado + "-01");
+      data.setMonth(data.getMonth() + i);
+
+      const mes = data.toISOString().slice(0, 7);
+
+      const transacoesFuturas = transacoes.filter((t) => t.mes === mes);
+
+      const entradasFuturas = transacoesFuturas
+        .filter((t) => t.tipo === "entrada")
+        .reduce((acc, t) => acc + t.valor, 0);
+
+      const saidasFuturas = transacoesFuturas
+        .filter((t) => t.tipo === "saida")
+        .reduce((acc, t) => acc + t.valor, 0);
+
+      saldoAtual += entradasFuturas - saidasFuturas;
+
+      futuros.push({
+        mes,
+        saldo: saldoAtual,
+      });
+    }
+
+    return futuros;
+  }
+
+  const previsao = calcularPrevisao();
 
   if (!user) return <p className="text-white">Carregando...</p>;
 
@@ -259,7 +317,7 @@ export default function Home() {
       <MetaFinanceira saldo={saldo} meta={meta} />
 
       <ListaRecorrentes
-        lista={recorrentesMes}
+        lista={contasDoMes}
         toggle={togglePago}
         excluir={excluirRec}
         editar={abrirEdicaoRec}
@@ -299,6 +357,17 @@ export default function Home() {
                 X
               </button>
             </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-slate-800 p-3 rounded-xl mt-4">
+        <p className="font-bold mb-2">📊 Previsão</p>
+
+        {previsao.map((p) => (
+          <div key={p.mes} className="flex justify-between">
+            <span>{p.mes}</span>
+            <span>{formatar(p.saldo)}</span>
           </div>
         ))}
       </div>
