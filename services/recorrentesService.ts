@@ -1,4 +1,10 @@
-import { deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  onSnapshot, // 🔥 ADICIONA ISSO
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export async function deletarRecorrente(userId: string, id: string) {
