@@ -11,8 +11,15 @@ import GraficoLinha from "@/components/GraficoLinha";
 
 export default function Relatorios() {
   const [user, setUser] = useState<any>(null);
-  const [mesSelecionado, setMesSelecionado] = useState(
+
+  const [mesAtual, setMesAtual] = useState(
     new Date().toISOString().slice(0, 7)
+  );
+
+  const [mesAnterior, setMesAnterior] = useState(
+    new Date(new Date().setMonth(new Date().getMonth() - 1))
+      .toISOString()
+      .slice(0, 7)
   );
 
   useEffect(() => {
@@ -21,14 +28,25 @@ export default function Relatorios() {
 
   const { transacoes } = useTransacoes(user);
 
-  // FILTRO
-  const transacoesMes = transacoes.filter(
-    (t) => t.mes === mesSelecionado
-  );
+  // FILTROS
+  const atual = transacoes.filter((t) => t.mes === mesAtual);
+  const anterior = transacoes.filter((t) => t.mes === mesAnterior);
+
+  // RESUMOS
+  const totalAtual = atual.reduce((acc, t) => acc + t.valor, 0);
+  const totalAnterior = anterior.reduce((acc, t) => acc + t.valor, 0);
+
+  const entradas = atual
+    .filter((t) => t.tipo === "entrada")
+    .reduce((acc, t) => acc + t.valor, 0);
+
+  const saidas = atual
+    .filter((t) => t.tipo === "saida")
+    .reduce((acc, t) => acc + t.valor, 0);
 
   // 📊 CATEGORIAS
   const dadosCategorias = Object.values(
-    transacoesMes.reduce((acc: any, t: any) => {
+    atual.reduce((acc: any, t: any) => {
       if (t.tipo === "saida") {
         acc[t.categoria] = acc[t.categoria] || {
           categoria: t.categoria,
@@ -40,10 +58,15 @@ export default function Relatorios() {
     }, {})
   );
 
+  // 🏆 TOP GASTOS
+  const topCategorias = [...dadosCategorias]
+    .sort((a: any, b: any) => b.valor - a.valor)
+    .slice(0, 3);
+
   // 📈 LINHA
   const dadosLinhaMap: any = {};
 
-  transacoesMes.forEach((t: any) => {
+  atual.forEach((t: any) => {
     const data = t.data?.seconds
       ? new Date(t.data.seconds * 1000)
       : new Date();
@@ -64,37 +87,81 @@ export default function Relatorios() {
   return (
     <div className="p-4 text-white">
 
-      <Header titulo="📊 Relatórios" />
+      <Header titulo="📊 Relatórios Avançados" />
 
-      {/* FILTRO */}
-      <input
-        type="month"
-        value={mesSelecionado}
-        onChange={(e) => setMesSelecionado(e.target.value)}
-        className="bg-slate-800 p-3 rounded-xl mb-4 w-full"
-      />
+      {/* COMPARAÇÃO */}
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
 
-      {/* GRÁFICOS */}
-      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-slate-800 p-4 rounded-xl">
+          <p className="text-sm opacity-70">Mês atual</p>
+          <h2 className="text-xl font-bold">
+            R$ {totalAtual.toFixed(2)}
+          </h2>
+        </div>
 
-        <GraficoCategorias dados={dadosCategorias} />
-
-        <GraficoLinha dados={dadosLinha} />
+        <div className="bg-slate-800 p-4 rounded-xl">
+          <p className="text-sm opacity-70">Mês anterior</p>
+          <h2 className="text-xl font-bold">
+            R$ {totalAnterior.toFixed(2)}
+          </h2>
+        </div>
 
       </div>
 
-      {/* RESUMO */}
-      <div className="bg-slate-800 p-4 rounded-xl mt-4">
-        <p className="text-sm opacity-70 mb-2">Resumo do mês</p>
+      {/* ENTRADAS VS SAÍDAS */}
+      <div className="bg-slate-800 p-4 rounded-xl mb-4">
+        <p className="text-sm opacity-70 mb-2">Entradas vs Saídas</p>
 
-        <p>Total de transações: {transacoesMes.length}</p>
+        <div className="flex justify-between">
+          <span className="text-green-400">
+            Entradas: R$ {entradas.toFixed(2)}
+          </span>
 
-        <p>
-          Total movimentado: R${" "}
-          {transacoesMes
-            .reduce((acc, t) => acc + t.valor, 0)
-            .toFixed(2)}
-        </p>
+          <span className="text-red-400">
+            Saídas: R$ {saidas.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      {/* GRÁFICOS */}
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <GraficoCategorias dados={dadosCategorias} />
+        <GraficoLinha dados={dadosLinha} />
+      </div>
+
+      {/* TOP GASTOS */}
+      <div className="bg-slate-800 p-4 rounded-xl mb-4">
+        <p className="text-sm opacity-70 mb-2">🏆 Maiores gastos</p>
+
+        {topCategorias.map((c: any) => (
+          <div key={c.categoria} className="flex justify-between text-sm mb-1">
+            <span>{c.categoria}</span>
+            <span>R$ {c.valor.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* INSIGHTS */}
+      <div className="bg-slate-800 p-4 rounded-xl text-sm space-y-2">
+
+        {totalAtual > totalAnterior && (
+          <p className="text-red-400">
+            ⚠️ Seus gastos aumentaram em relação ao mês passado
+          </p>
+        )}
+
+        {totalAtual < totalAnterior && (
+          <p className="text-green-400">
+            👍 Você reduziu seus gastos, ótimo trabalho!
+          </p>
+        )}
+
+        {saidas > entradas && (
+          <p className="text-yellow-400">
+            💡 Suas saídas estão maiores que suas entradas
+          </p>
+        )}
+
       </div>
 
     </div>
