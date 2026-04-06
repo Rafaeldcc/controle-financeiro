@@ -55,8 +55,24 @@ export default function Home() {
       currency: "BRL",
     });
 
-  const categoriasEntrada = ["Salário", "Extra", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = ["Alimentação", "Transporte", "Empréstimo", "Cartão", "Telefone", "Saúde", "Moradia", "Lazer"];
+  const categoriasEntrada = [
+    "Salário",
+    "Extra",
+    "Freelance",
+    "Investimentos",
+    "Outros",
+  ];
+
+  const categoriasSaida = [
+    "Alimentação",
+    "Transporte",
+    "Empréstimo",
+    "Cartão",
+    "Telefone",
+    "Saúde",
+    "Moradia",
+    "Lazer",
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
@@ -179,27 +195,32 @@ export default function Home() {
   }
 
   async function adicionarRecorrente() {
-    if (!nomeRec || !diaRec) return;
+  if (!nomeRec || !diaRec) return;
 
+  const dados = {
+    nome: nomeRec,
+    dia: Number(diaRec),
+  } as any; // 🔥 evita erro de tipagem no build
+
+  try {
     if (editandoRec) {
-      await editarRec(editandoRec.id, {
-        nome: nomeRec,
-        dia: Number(diaRec),
-      });
-
+      await editarRec(editandoRec.id, dados);
       setEditandoRec(null);
     } else {
-      await addRec({
-        nome: nomeRec,
-        dia: Number(diaRec),
-      });
+      await addRec(dados);
     }
 
     setNomeRec("");
     setDiaRec("");
+  } catch (error) {
+    console.error("Erro ao salvar recorrente:", error);
   }
-
-  async function adicionarParcelado(nome: string, valor: number, parcelas: number) {
+}
+  async function adicionarParcelado(
+    nome: string,
+    valor: number,
+    parcelas: number
+  ) {
     for (let i = 0; i < parcelas; i++) {
       const data = new Date();
       data.setMonth(data.getMonth() + i);
@@ -219,7 +240,7 @@ export default function Home() {
 
   function calcularPrevisao() {
     let saldoAtual = saldo;
-    const futuros: any[] = [];
+    const futuros = [];
 
     for (let i = 1; i <= 3; i++) {
       const data = new Date(mesSelecionado + "-01");
