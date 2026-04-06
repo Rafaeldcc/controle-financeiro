@@ -212,7 +212,11 @@ function abrirEdicao(t: any) {
 
       <MetaFinanceira saldo={saldo} meta={meta} />
 
-      <ListaRecorrentes lista={recorrentes} toggle={togglePago} />
+      <ListaRecorrentes
+        lista={recorrentes}
+        toggle={togglePago}
+        excluir={excluir}
+      />
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         <GraficoCategorias dados={dadosCategorias} />

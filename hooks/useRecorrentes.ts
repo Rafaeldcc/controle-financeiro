@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Recorrente } from "@/types/Recorrente";
+import { deletarRecorrente } from "@/services/recorrentesService";
 
 export function useRecorrentes(user: any) {
   const [recorrentes, setRecorrentes] = useState<Recorrente[]>([]);
@@ -20,8 +21,11 @@ export function useRecorrentes(user: any) {
     const unsub = onSnapshot(ref, (snapshot) => {
       const lista: Recorrente[] = [];
 
-      snapshot.forEach((doc) =>
-        lista.push({ id: doc.id, ...(doc.data() as Recorrente) })
+      snapshot.forEach((docSnap) =>
+        lista.push({
+          id: docSnap.id,
+          ...(docSnap.data() as Recorrente),
+        })
       );
 
       setRecorrentes(lista);
@@ -30,19 +34,37 @@ export function useRecorrentes(user: any) {
     return () => unsub();
   }, [user]);
 
+  // ➕ ADICIONAR
   async function adicionar(data: Recorrente) {
+    if (!user) return;
+
     await addDoc(
       collection(db, "usuarios", user.uid, "recorrentes"),
       data
     );
   }
 
+  // 🔁 TOGGLE PAGO
   async function togglePago(id: string, atual: boolean) {
+    if (!user) return;
+
     await updateDoc(
       doc(db, "usuarios", user.uid, "recorrentes", id),
       { pago: !atual }
     );
   }
 
-  return { recorrentes, adicionar, togglePago };
+  // ❌ EXCLUIR (🔥 NOVO)
+  async function excluir(id: string) {
+    if (!user) return;
+
+    await deletarRecorrente(user.uid, id);
+  }
+
+  return {
+    recorrentes,
+    adicionar,
+    togglePago,
+    excluir, // 🔥 ADICIONADO
+  };
 }

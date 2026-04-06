@@ -1,31 +1,52 @@
-export default function ListaRecorrentes({ lista, toggle }: any) {
+export default function ListaRecorrentes({ lista, toggle, excluir }: any) {
+  const hoje = new Date().getDate();
+
   return (
     <div className="bg-slate-800 p-4 rounded-xl mb-4">
+      <h2 className="font-bold mb-3">💳 Despesas Fixas</h2>
 
-      <h2 className="mb-3 font-bold">💳 Despesas Fixas</h2>
+      {lista.map((r: any) => {
+        const atrasado = !r.pago && hoje > r.dia;
 
-      {lista.map((r: any) => (
-        <div
-          key={r.id}
-          className="flex justify-between items-center mb-2"
-        >
-          <div>
-            <p>{r.nome}</p>
-            <p className="text-xs opacity-60">
-              Dia {r.dia} - R$ {r.valor}
-            </p>
-          </div>
-
-          <button
-            onClick={() => toggle(r.id, r.pago)}
-            className={`px-3 py-1 rounded ${
-              r.pago ? "bg-green-500" : "bg-red-500"
-            }`}
+        return (
+          <div
+            key={r.id}
+            className="flex justify-between items-center mb-2"
           >
-            {r.pago ? "Pago" : "Pendente"}
-          </button>
-        </div>
-      ))}
+            <div>
+              <p className="font-bold">{r.nome}</p>
+              <p className="text-xs opacity-60">
+                Dia {r.dia} • R$ {Number(r.valor) || 0}
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+
+              <button
+                onClick={() => toggle(r.id, r.pago)}
+                className={`px-3 py-1 rounded text-sm ${
+                  r.pago
+                    ? "bg-green-500"
+                    : atrasado
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
+                }`}
+              >
+                {r.pago ? "Pago" : atrasado ? "Atrasado" : "Pendente"}
+              </button>
+
+              {/* 🔥 BOTÃO EXCLUIR */}
+              <button
+                onClick={() => excluir(r.id)}
+                className="bg-red-600 px-2 rounded"
+              >
+                X
+              </button>
+
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
