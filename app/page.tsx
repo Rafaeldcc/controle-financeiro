@@ -49,7 +49,7 @@ export default function Home() {
     });
 
   const categoriasEntrada = ["Salário", "Extra", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = ["Alimentação", "Transporte", "Imprestimo", "Cartaão", "Saúde", "Moradia", "Lazer"];
+  const categoriasSaida = ["Alimentação", "Transporte", "Empréstimo", "Cartaão", "Saúde", "Moradia", "Lazer"];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
