@@ -55,24 +55,8 @@ export default function Home() {
       currency: "BRL",
     });
 
-  const categoriasEntrada = [
-    "Salário",
-    "Extra",
-    "Freelance",
-    "Investimentos",
-    "Outros",
-  ];
-
-  const categoriasSaida = [
-    "Alimentação",
-    "Transporte",
-    "Empréstimo",
-    "Cartão",
-    "Telefone",
-    "Saúde",
-    "Moradia",
-    "Lazer",
-  ];
+  const categoriasEntrada = ["Salário", "Extra", "Freelance", "Investimentos", "Outros"];
+  const categoriasSaida = ["Alimentação", "Transporte", "Empréstimo", "Cartão", "Telefone", "Saúde", "Moradia", "Lazer"];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
@@ -215,11 +199,7 @@ export default function Home() {
     setDiaRec("");
   }
 
-  async function adicionarParcelado(
-    nome: string,
-    valor: number,
-    parcelas: number
-  ) {
+  async function adicionarParcelado(nome: string, valor: number, parcelas: number) {
     for (let i = 0; i < parcelas; i++) {
       const data = new Date();
       data.setMonth(data.getMonth() + i);
@@ -239,7 +219,7 @@ export default function Home() {
 
   function calcularPrevisao() {
     let saldoAtual = saldo;
-    const futuros = [];
+    const futuros: any[] = [];
 
     for (let i = 1; i <= 3; i++) {
       const data = new Date(mesSelecionado + "-01");
