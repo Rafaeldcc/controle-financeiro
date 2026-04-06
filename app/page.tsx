@@ -46,6 +46,9 @@ export default function Home() {
       currency: "BRL",
     });
 
+  const categoriasEntrada = ["Salário", "Freelance", "Investimentos", "Outros"];
+  const categoriasSaida = ["Alimentação", "Transporte", "Moradia", "Lazer"];
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
       if (!usuario) window.location.href = "/login";
@@ -126,6 +129,11 @@ export default function Home() {
   );
 
   async function adicionarTransacao() {
+    if (!valor || !categoria) {
+      setMensagem("⚠️ Preencha os campos");
+      return;
+    }
+
     await adicionar({
       valor: Number(valor),
       tipo,
@@ -142,6 +150,8 @@ export default function Home() {
   }
 
   async function adicionarRecorrente() {
+    if (!nomeRec || !valorRec || !diaRec) return;
+
     await addRec({
       nome: nomeRec,
       valor: Number(valorRec),
@@ -162,31 +172,26 @@ export default function Home() {
 
       <MenuLateral aberto={menuAberto} fechar={() => setMenuAberto(false)} />
 
-      {/* HEADER */}
       <div className="flex justify-between mb-4">
         <button onClick={() => setMenuAberto(true)}>☰</button>
         <h1>Dashboard</h1>
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
-      {/* ALERTA RECORRENTE */}
       {totalRecorrente > 0 && (
         <div className="bg-red-500 p-3 rounded-xl mb-4">
           💳 Contas pendentes: {formatar(totalRecorrente)}
         </div>
       )}
 
-      {/* SALDO */}
       <div className="bg-green-600 p-4 rounded-xl mb-4">
         <h1>{formatar(saldo)}</h1>
       </div>
 
       <MetaFinanceira saldo={saldo} meta={meta} />
 
-      {/* RECORRENTES */}
       <ListaRecorrentes lista={recorrentes} toggle={togglePago} />
 
-      {/* GRÁFICOS */}
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         <GraficoCategorias dados={dadosCategorias} />
         <GraficoLinha dados={dadosLinha} />
@@ -194,16 +199,36 @@ export default function Home() {
 
       <Insights entradas={entradas} saidas={saidas} />
 
-      {/* LISTA */}
-      {transacoesMes.map((t) => (
-        <div key={t.id}>
-          {t.descricao} - {formatar(t.valor)}
-        </div>
-      ))}
+      {/* LISTA BONITA COM EXCLUIR */}
+      <div className="space-y-2">
+        {transacoesMes.map((t) => (
+          <div
+            key={t.id}
+            className="bg-slate-800 p-3 rounded-xl flex justify-between items-center"
+          >
+            <div>
+              <p className="font-bold">{t.descricao || "Sem descrição"}</p>
+              <p className="text-xs opacity-60">{t.categoria}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
+                {formatar(t.valor)}
+              </p>
+
+              <button
+                onClick={() => excluir(t.id)}
+                className="bg-red-500 px-2 rounded"
+              >
+                X
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <FabButton onClick={() => setModalAberto(true)} />
 
-      {/* MODAL */}
       <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
 
         <h2 className="font-bold mb-2">Nova Transação</h2>
@@ -214,6 +239,29 @@ export default function Home() {
           onChange={(e) => setValor(e.target.value)}
           className="bg-slate-700 p-2 w-full mb-2"
         />
+
+        <select
+          value={tipo}
+          onChange={(e) => {
+            setTipo(e.target.value);
+            setCategoria("");
+          }}
+          className="bg-slate-700 p-2 w-full mb-2"
+        >
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        >
+          <option value="">Categoria</option>
+          {(tipo === "entrada" ? categoriasEntrada : categoriasSaida).map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
 
         <input
           placeholder="Descrição"
