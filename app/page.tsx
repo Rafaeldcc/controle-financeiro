@@ -25,7 +25,6 @@ export default function Home() {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
 
-  // ✅ STATES RECORRENTES (FALTAVA)
   const [nomeRec, setNomeRec] = useState("");
   const [valorRec, setValorRec] = useState("");
   const [diaRec, setDiaRec] = useState("");
@@ -47,19 +46,6 @@ export default function Home() {
       currency: "BRL",
     });
 
-  const categoriasEntrada = ["Salário", "Freelance", "Investimentos", "Outros"];
-  const categoriasSaida = [
-    "Alimentação",
-    "Transporte",
-    "Empréstimo",
-    "Cartão",
-    "Médico",
-    "Moradia",
-    "Lazer",
-  ];
-
-  const categorias = tipo === "entrada" ? categoriasEntrada : categoriasSaida;
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usuario) => {
       if (!usuario) window.location.href = "/login";
@@ -68,6 +54,25 @@ export default function Home() {
 
     return () => unsubscribe();
   }, []);
+
+  // 🔁 RECORRENTE AUTOMÁTICO
+  useEffect(() => {
+    if (!user || recorrentes.length === 0) return;
+
+    const mesAtual = new Date().toISOString().slice(0, 7);
+
+    recorrentes.forEach(async (r: any) => {
+      if (r.mes !== mesAtual) {
+        await addRec({
+          nome: r.nome,
+          valor: r.valor,
+          dia: r.dia,
+          pago: false,
+          mes: mesAtual,
+        });
+      }
+    });
+  }, [recorrentes]);
 
   const transacoesMes = transacoes.filter(
     (t) => t.mes === mesSelecionado
@@ -81,7 +86,11 @@ export default function Home() {
     .filter((t) => t.tipo === "saida")
     .reduce((acc, t) => acc + t.valor, 0);
 
-  const saldo = entradas - saidas;
+  const totalRecorrente = recorrentes
+    .filter((r) => !r.pago)
+    .reduce((acc, r) => acc + r.valor, 0);
+
+  const saldo = entradas - saidas - totalRecorrente;
 
   const dadosCategorias = Object.values(
     transacoesMes.reduce((acc: any, t: any) => {
@@ -117,39 +126,22 @@ export default function Home() {
   );
 
   async function adicionarTransacao() {
-    if (!valor || !categoria) {
-      setMensagem("⚠️ Preencha todos os campos");
-      return;
-    }
+    await adicionar({
+      valor: Number(valor),
+      tipo,
+      descricao,
+      categoria,
+      data: new Date(),
+      mes: mesSelecionado,
+    });
 
-    try {
-      await adicionar({
-        valor: Number(valor),
-        tipo,
-        descricao,
-        categoria,
-        data: new Date(),
-        mes: mesSelecionado,
-      });
-
-      setValor("");
-      setDescricao("");
-      setCategoria("");
-
-      setMensagem("✅ Transação salva!");
-      setTimeout(() => setMensagem(""), 2000);
-    } catch {
-      setMensagem("❌ Erro ao salvar");
-    }
+    setValor("");
+    setDescricao("");
+    setCategoria("");
+    setModalAberto(false);
   }
 
-  // ✅ FUNÇÃO AGORA NO LUGAR CERTO
   async function adicionarRecorrente() {
-    if (!nomeRec || !valorRec || !diaRec) {
-      setMensagem("⚠️ Preencha os campos da despesa fixa");
-      return;
-    }
-
     await addRec({
       nome: nomeRec,
       valor: Number(valorRec),
@@ -161,9 +153,6 @@ export default function Home() {
     setNomeRec("");
     setValorRec("");
     setDiaRec("");
-
-    setMensagem("✅ Recorrente salva!");
-    setTimeout(() => setMensagem(""), 2000);
   }
 
   if (!user) return <p className="text-white">Carregando...</p>;
@@ -173,20 +162,31 @@ export default function Home() {
 
       <MenuLateral aberto={menuAberto} fechar={() => setMenuAberto(false)} />
 
-      <div className="flex items-center justify-between mb-4">
+      {/* HEADER */}
+      <div className="flex justify-between mb-4">
         <button onClick={() => setMenuAberto(true)}>☰</button>
         <h1>Dashboard</h1>
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
+      {/* ALERTA RECORRENTE */}
+      {totalRecorrente > 0 && (
+        <div className="bg-red-500 p-3 rounded-xl mb-4">
+          💳 Contas pendentes: {formatar(totalRecorrente)}
+        </div>
+      )}
+
+      {/* SALDO */}
       <div className="bg-green-600 p-4 rounded-xl mb-4">
         <h1>{formatar(saldo)}</h1>
       </div>
 
       <MetaFinanceira saldo={saldo} meta={meta} />
 
+      {/* RECORRENTES */}
       <ListaRecorrentes lista={recorrentes} toggle={togglePago} />
 
+      {/* GRÁFICOS */}
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         <GraficoCategorias dados={dadosCategorias} />
         <GraficoLinha dados={dadosLinha} />
@@ -194,30 +194,64 @@ export default function Home() {
 
       <Insights entradas={entradas} saidas={saidas} />
 
-      <div className="space-y-2">
-        {transacoesMes.map((t) => (
-          <div key={t.id}>
-            {t.descricao} - {formatar(t.valor)}
-          </div>
-        ))}
-      </div>
+      {/* LISTA */}
+      {transacoesMes.map((t) => (
+        <div key={t.id}>
+          {t.descricao} - {formatar(t.valor)}
+        </div>
+      ))}
 
       <FabButton onClick={() => setModalAberto(true)} />
 
+      {/* MODAL */}
       <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
 
-        <input value={valor} onChange={(e) => setValor(e.target.value)} />
-        <input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+        <h2 className="font-bold mb-2">Nova Transação</h2>
 
-        <button onClick={adicionarTransacao}>Salvar</button>
+        <input
+          placeholder="Valor"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
 
-        <hr className="my-4" />
+        <input
+          placeholder="Descrição"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
 
-        <input value={nomeRec} onChange={(e) => setNomeRec(e.target.value)} />
-        <input value={valorRec} onChange={(e) => setValorRec(e.target.value)} />
-        <input value={diaRec} onChange={(e) => setDiaRec(e.target.value)} />
+        <button onClick={adicionarTransacao} className="bg-green-500 w-full p-2 mb-4">
+          Salvar
+        </button>
 
-        <button onClick={adicionarRecorrente}>
+        <hr className="my-3" />
+
+        <h2 className="font-bold mb-2">Despesa Fixa</h2>
+
+        <input
+          placeholder="Nome"
+          value={nomeRec}
+          onChange={(e) => setNomeRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Valor"
+          value={valorRec}
+          onChange={(e) => setValorRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Dia"
+          value={diaRec}
+          onChange={(e) => setDiaRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <button onClick={adicionarRecorrente} className="bg-blue-500 w-full p-2">
           Salvar Recorrente
         </button>
 
