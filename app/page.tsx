@@ -235,18 +235,6 @@ export default function Home() {
     });
   }
 
-    } else {
-      await adicionar({
-        valor: Number(valorFinal),
-        tipo: "saida",
-        descricao: conta.nome,
-        categoria: "Moradia",
-        data: new Date(),
-        mes: mesSelecionado,
-      });
-    }
-  }
-
   async function adicionarRecorrente() {
   if (!nomeRec || !diaRec) return;
 
