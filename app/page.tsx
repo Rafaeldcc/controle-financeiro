@@ -359,13 +359,15 @@ export default function Home() {
 
       <Insights entradas={entradas} saidas={saidas} />
 
+      {/* 
       <div className="space-y-2">
         {transacoesMes.map((t) => (
-          <div
-            key={t.id}
-            onClick={() => abrirEdicao(t)}
-            className="bg-slate-800 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-700 transition"
-          >
+          <div key={t.id}>
+            ...
+          </div>
+        ))}
+      </div>
+      */}
             <div>
               <p className="font-bold">{t.descricao || "Sem descrição"}</p>
               <p className="text-xs opacity-60">{t.categoria}</p>
