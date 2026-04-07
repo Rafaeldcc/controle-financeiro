@@ -210,22 +210,33 @@ export default function Home() {
       return;
     }
 
+    // 🔥 PARCELADO (modelo correto)
     if (parcelas > 1) {
-      for (let i = 0; i < parcelas; i++) {
-        const data = new Date();
-        data.setMonth(data.getMonth() + i);
+      await adicionar({
+        descricao: conta.nome,
+        valor: Number(valorFinal),
+        tipo: "saida",
+        categoria: "Parcelado",
+        data: new Date(),
+        mes: mesSelecionado,
 
-        const mes = data.toISOString().slice(0, 7);
+        parcelas: parcelas,
+        parcelaAtual: 1,
+      });
 
-        await adicionar({
-          descricao: `${conta.nome} (${i + 1}/${parcelas})`,
-          valor: Number(valorFinal),
-          tipo: "saida",
-          categoria: "Parcelado",
-          mes,
-          data: new Date(),
-        });
-      }
+      return; // 🔥 MUITO IMPORTANTE
+    }
+
+    // 🔥 NORMAL
+    await adicionar({
+      valor: Number(valorFinal),
+      tipo: "saida",
+      descricao: conta.nome,
+      categoria: "Moradia",
+      data: new Date(),
+      mes: mesSelecionado,
+    });
+  }
     } else {
       await adicionar({
         valor: Number(valorFinal),

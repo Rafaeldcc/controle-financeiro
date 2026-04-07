@@ -29,13 +29,37 @@ export default function Historico() {
             key={t.id}
             className="bg-slate-800 p-3 rounded-xl flex justify-between items-center"
           >
-            <div>
+            {/* 🔥 ESQUERDA */}
+            <div className="flex-1">
               <p className="font-bold">{t.descricao}</p>
-              <p className="text-xs opacity-60">{t.categoria}</p>
+
+              {t.parcelas && (
+                <>
+                  <p className="text-xs text-blue-400">
+                    Parcela {t.parcelaAtual} de {t.parcelas}
+                  </p>
+
+                  <div className="w-full bg-slate-700 h-2 rounded mt-1">
+                    <div
+                      className="bg-blue-500 h-2 rounded"
+                      style={{
+                        width: `${(t.parcelaAtual / t.parcelas) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
+            {/* 🔥 DIREITA */}
             <div className="flex items-center gap-2">
-              <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
+              <p
+                className={
+                  t.tipo === "entrada"
+                    ? "text-green-400"
+                    : "text-red-400"
+                }
+              >
                 {t.valor}
               </p>
 
