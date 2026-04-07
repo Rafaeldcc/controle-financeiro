@@ -210,7 +210,6 @@ export default function Home() {
       return;
     }
 
-    // 🔥 PARCELADO (modelo correto)
     if (parcelas > 1) {
       await adicionar({
         descricao: conta.nome,
@@ -219,15 +218,13 @@ export default function Home() {
         categoria: "Parcelado",
         data: new Date(),
         mes: mesSelecionado,
-
         parcelas: parcelas,
         parcelaAtual: 1,
       });
 
-      return; // 🔥 MUITO IMPORTANTE
+      return;
     }
 
-    // 🔥 NORMAL
     await adicionar({
       valor: Number(valorFinal),
       tipo: "saida",
@@ -237,6 +234,7 @@ export default function Home() {
       mes: mesSelecionado,
     });
   }
+
     } else {
       await adicionar({
         valor: Number(valorFinal),
