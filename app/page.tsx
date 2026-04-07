@@ -235,7 +235,7 @@ export default function Home() {
       parcelas: parcelas,
       parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
-
+  }
 
     // 🔥 atualiza progresso da recorrente
     async function pagarConta(conta: any) {
