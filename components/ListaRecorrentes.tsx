@@ -24,24 +24,36 @@ export default function ListaRecorrentes({
               <p className="font-bold">{r.nome}</p>
 
               <p className="text-xs opacity-60">
-                Dia {r.dia} • R$ {Number(r.valor) || 0}
+                Dia {r.dia} • R$ {Number(r.valor) || r.valorPadrao || 0}
               </p>
 
-              {/* 🔥 NOVO: INPUTS */}
+              {/* 🔥 INPUTS CORRIGIDOS */}
               <div className="flex gap-2 mt-1">
                 <input
                   type="number"
                   placeholder="Valor"
+                  defaultValue={r.valorTemp || ""}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => (r.valorTemp = Number(e.target.value))}
+                  onChange={(e) => {
+                    r.valorTemp = Number(e.target.value);
+
+                    // 🔥 força atualização leve
+                    r._temp = Date.now();
+                  }}
                   className="bg-slate-700 px-2 py-1 rounded w-24"
                 />
 
                 <input
                   type="number"
                   placeholder="Parcelas"
+                  defaultValue={r.parcelasTemp || r.parcelas || ""}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => (r.parcelas = Number(e.target.value))}
+                  onChange={(e) => {
+                    r.parcelasTemp = Number(e.target.value);
+
+                    // 🔥 NÃO sobrescreve o original
+                    r._temp = Date.now();
+                  }}
                   className="bg-slate-700 px-2 py-1 rounded w-20"
                 />
 
