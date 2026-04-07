@@ -201,16 +201,41 @@ export default function Home() {
     setModalAberto(true); // 🔥 ESSENCIAL
   }
 
-  function pagarConta(conta: any) {
-    setDescricao(conta.nome);
-    setCategoria("Moradia");
-    setTipo("saida");
-    setValor("");
+  async function pagarConta(conta: any) {
+    const valorFinal = conta.valor || conta.valorTemp;
+    const parcelas = conta.parcelas || 1;
 
-    // 🔥 guarda a conta que está sendo paga
-    setEditandoRec(conta);
+    if (!valorFinal || valorFinal <= 0) {
+      alert("Digite um valor antes de pagar");
+      return;
+    }
 
-    setModalAberto(true);
+    if (parcelas > 1) {
+      for (let i = 0; i < parcelas; i++) {
+        const data = new Date();
+        data.setMonth(data.getMonth() + i);
+
+        const mes = data.toISOString().slice(0, 7);
+
+        await adicionar({
+          descricao: `${conta.nome} (${i + 1}/${parcelas})`,
+          valor: Number(valorFinal),
+          tipo: "saida",
+          categoria: "Parcelado",
+          mes,
+          data: new Date(),
+        });
+      }
+    } else {
+      await adicionar({
+        valor: Number(valorFinal),
+        tipo: "saida",
+        descricao: conta.nome,
+        categoria: "Moradia",
+        data: new Date(),
+        mes: mesSelecionado,
+      });
+    }
   }
 
   async function adicionarRecorrente() {
