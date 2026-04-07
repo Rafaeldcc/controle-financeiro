@@ -30,7 +30,6 @@ export default function Home() {
   const [nomeRec, setNomeRec] = useState("");
   const [diaRec, setDiaRec] = useState("");
 
-  // 🔥 NOVOS STATES
   const [valorRec, setValorRec] = useState("");
   const [parcelasRec, setParcelasRec] = useState("");
 
@@ -193,7 +192,6 @@ export default function Home() {
     setModalAberto(true);
   }
 
-  // 🔥 EDITAR RECORRENTE CORRIGIDO
   function abrirEdicaoRec(r: any) {
     setEditandoRec(r);
     setNomeRec(r.nome);
@@ -203,12 +201,13 @@ export default function Home() {
     setModalAberto(true);
   }
 
-  // 🔥 PAGAMENTO INTELIGENTE
+  // 🔥 CORRIGIDO AQUI
   async function pagarConta(conta: any) {
     const valorFinal =
       conta.valorTemp || conta.valor || conta.valorPadrao;
 
-    const parcelas = conta.parcelas || 1;
+    const parcelas =
+      conta.parcelasTemp || conta.parcelas || 1;
 
     if (!valorFinal || valorFinal <= 0) {
       alert("Digite um valor antes de pagar");
@@ -227,7 +226,6 @@ export default function Home() {
     });
   }
 
-  // 🔥 RECORRENTE COM VALOR + PARCELAS
   async function adicionarRecorrente() {
     if (!nomeRec || !diaRec) return;
 
@@ -410,7 +408,6 @@ export default function Home() {
           className="bg-slate-700 p-2 w-full mb-2"
         />
 
-        {/* 🔥 NOVOS CAMPOS */}
         <input
           placeholder="Valor (opcional)"
           value={valorRec}
