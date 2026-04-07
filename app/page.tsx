@@ -197,6 +197,8 @@ export default function Home() {
     setEditandoRec(r);
     setNomeRec(r.nome);
     setDiaRec(String(r.dia));
+
+    setModalAberto(true); // 🔥 ESSENCIAL
   }
 
   function pagarConta(conta: any) {
