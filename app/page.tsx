@@ -98,26 +98,22 @@ export default function Home() {
   const contasDoMes = recorrentes.map((r) => {
     const transacoesDaConta = transacoes.filter(
       (t) =>
-        t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase() &&
+        t.descricao?.includes(r.nome) &&
         t.tipo === "saida"
     );
 
     const jaExisteMes = transacoesMes.find(
-      (t) =>
-        t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase()
+      (t) => t.descricao?.includes(r.nome)
     );
 
     return {
       ...r,
-
-      // 🔥 valor do mês
       valor: jaExisteMes ? jaExisteMes.valor : r.valorPadrao || 0,
-
-      // 🔥 pago no mês atual
       pago: !!jaExisteMes,
-
-      // 🔥 AQUI A MÁGICA
-      parcelaAtual: transacoesDaConta.length,
+      parcelaAtual: Math.min(
+        transacoesDaConta.length,
+        r.parcelas || transacoesDaConta.length
+      ),
     };
   });
 
@@ -212,7 +208,7 @@ export default function Home() {
     setModalAberto(true);
   }
 
-  // 🔥 CORRIGIDO AQUI
+  // 🔥 CORREÇÃO PRINCIPAL (FECHAMENTO)
   async function pagarConta(conta: any) {
     const valorFinal =
       conta.valorTemp || conta.valor || conta.valorPadrao;
@@ -235,7 +231,7 @@ export default function Home() {
       parcelas: parcelas,
       parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
-    }
+  } // 👈 ESSA LINHA ERA O PROBLEMA
 
   async function adicionarRecorrente() {
     if (!nomeRec || !diaRec) return;
