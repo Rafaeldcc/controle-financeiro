@@ -235,32 +235,6 @@ export default function Home() {
       parcelas: parcelas,
       parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
-  }
-
-    // 🔥 atualiza progresso da recorrente
-    async function pagarConta(conta: any) {
-    const valorFinal =
-      conta.valorTemp || conta.valor || conta.valorPadrao;
-
-    const parcelas =
-      conta.parcelasTemp || conta.parcelas || 1;
-
-    if (!valorFinal || valorFinal <= 0) {
-      alert("Digite um valor antes de pagar");
-      return;
-    }
-
-    await adicionar({
-      descricao: conta.nome,
-      valor: Number(valorFinal),
-      tipo: "saida",
-      categoria: "Moradia",
-      data: new Date(),
-      mes: mesSelecionado,
-      parcelas: parcelas,
-      parcelaAtual: (conta.parcelaAtual || 0) + 1,
-    });
-  }
     }
 
   async function adicionarRecorrente() {
