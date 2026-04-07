@@ -1,9 +1,23 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { useTransacoes } from "@/hooks/useTransacoes";
 
 export default function Historico() {
-  const { transacoes, excluir } = useTransacoes();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) setUser(u);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const { transacoes, excluir } = useTransacoes(user);
+
+  if (!user) return <p className="text-white">Carregando...</p>;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4">
