@@ -30,6 +30,10 @@ export default function Home() {
   const [nomeRec, setNomeRec] = useState("");
   const [diaRec, setDiaRec] = useState("");
 
+  // 🔥 NOVOS STATES
+  const [valorRec, setValorRec] = useState("");
+  const [parcelasRec, setParcelasRec] = useState("");
+
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().toISOString().slice(0, 7)
   );
@@ -92,7 +96,6 @@ export default function Home() {
     .filter((t) => t.tipo === "saida")
     .reduce((acc, t) => acc + t.valor, 0);
 
-  // 🔥 CONTAS DO MÊS
   const contasDoMes = recorrentes.map((r) => {
     const jaExiste = transacoesMes.find(
       (t) =>
@@ -170,14 +173,11 @@ export default function Home() {
         categoria,
         data: new Date(),
         mes: mesSelecionado,
-
-        // 🔥 NOVO
         recorrenteId: editandoRec?.id || null,
       });
     }
 
     setEditandoRec(null);
-
     setValor("");
     setDescricao("");
     setCategoria("");
@@ -193,16 +193,21 @@ export default function Home() {
     setModalAberto(true);
   }
 
+  // 🔥 EDITAR RECORRENTE CORRIGIDO
   function abrirEdicaoRec(r: any) {
     setEditandoRec(r);
     setNomeRec(r.nome);
     setDiaRec(String(r.dia));
-
-    setModalAberto(true); // 🔥 ESSENCIAL
+    setValorRec(r.valorPadrao ? String(r.valorPadrao) : "");
+    setParcelasRec(r.parcelas ? String(r.parcelas) : "");
+    setModalAberto(true);
   }
 
+  // 🔥 PAGAMENTO INTELIGENTE
   async function pagarConta(conta: any) {
-    const valorFinal = conta.valor || conta.valorTemp;
+    const valorFinal =
+      conta.valorTemp || conta.valor || conta.valorPadrao;
+
     const parcelas = conta.parcelas || 1;
 
     if (!valorFinal || valorFinal <= 0) {
@@ -210,72 +215,43 @@ export default function Home() {
       return;
     }
 
-    if (parcelas > 1) {
-      await adicionar({
-        descricao: conta.nome,
-        valor: Number(valorFinal),
-        tipo: "saida",
-        categoria: "Parcelado",
-        data: new Date(),
-        mes: mesSelecionado,
-        parcelas: parcelas,
-        parcelaAtual: 1,
-      });
-
-      return;
-    }
-
     await adicionar({
+      descricao: conta.nome,
       valor: Number(valorFinal),
       tipo: "saida",
-      descricao: conta.nome,
       categoria: "Moradia",
       data: new Date(),
       mes: mesSelecionado,
+      parcelas: parcelas,
+      parcelaAtual: 1,
     });
   }
 
+  // 🔥 RECORRENTE COM VALOR + PARCELAS
   async function adicionarRecorrente() {
-  if (!nomeRec || !diaRec) return;
+    if (!nomeRec || !diaRec) return;
 
-  const dados = {
-    nome: nomeRec,
-    dia: Number(diaRec),
-  } as any; // 🔥 evita erro de tipagem no build
+    const dados = {
+      nome: nomeRec,
+      dia: Number(diaRec),
+      valorPadrao: valorRec ? Number(valorRec) : null,
+      parcelas: parcelasRec ? Number(parcelasRec) : null,
+    } as any;
 
-  try {
-    if (editandoRec) {
-      await editarRec(editandoRec.id, dados);
-      setEditandoRec(null);
-    } else {
-      await addRec(dados);
-    }
+    try {
+      if (editandoRec) {
+        await editarRec(editandoRec.id, dados);
+        setEditandoRec(null);
+      } else {
+        await addRec(dados);
+      }
 
-    setNomeRec("");
-    setDiaRec("");
-  } catch (error) {
-    console.error("Erro ao salvar recorrente:", error);
-  }
-}
-  async function adicionarParcelado(
-    nome: string,
-    valor: number,
-    parcelas: number
-  ) {
-    for (let i = 0; i < parcelas; i++) {
-      const data = new Date();
-      data.setMonth(data.getMonth() + i);
-
-      const mes = data.toISOString().slice(0, 7);
-
-      await adicionar({
-        descricao: `${nome} (${i + 1}/${parcelas})`,
-        valor,
-        tipo: "saida",
-        categoria: "Parcelado",
-        mes,
-        data: new Date(),
-      });
+      setNomeRec("");
+      setDiaRec("");
+      setValorRec("");
+      setParcelasRec("");
+    } catch (error) {
+      console.error("Erro ao salvar recorrente:", error);
     }
   }
 
@@ -322,7 +298,6 @@ export default function Home() {
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
-      {/* 🔥 NOVO BOTÃO */}
       <button
         onClick={() => window.location.href = "/historico"}
         className="bg-slate-700 px-3 py-2 rounded mb-4"
@@ -339,12 +314,6 @@ export default function Home() {
         />
       </div>
 
-      {totalRecorrente > 0 && (
-        <div className="bg-red-500 p-3 rounded-xl mb-4">
-          💳 Contas pendentes: {formatar(totalRecorrente)}
-        </div>
-      )}
-
       <div className="bg-green-600 p-4 rounded-xl mb-4">
         <h1>{formatar(saldo)}</h1>
       </div>
@@ -354,7 +323,7 @@ export default function Home() {
         toggle={togglePago}
         excluir={excluirRec}
         editar={abrirEdicaoRec}
-        onPagar={pagarConta} // 👈 NOVO
+        onPagar={pagarConta}
       />
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -438,6 +407,21 @@ export default function Home() {
           placeholder="Dia"
           value={diaRec}
           onChange={(e) => setDiaRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        {/* 🔥 NOVOS CAMPOS */}
+        <input
+          placeholder="Valor (opcional)"
+          value={valorRec}
+          onChange={(e) => setValorRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Parcelas (opcional)"
+          value={parcelasRec}
+          onChange={(e) => setParcelasRec(e.target.value)}
           className="bg-slate-700 p-2 w-full mb-2"
         />
 
