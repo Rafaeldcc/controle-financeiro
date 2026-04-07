@@ -325,6 +325,14 @@ export default function Home() {
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
+      {/* 🔥 NOVO BOTÃO */}
+      <button
+        onClick={() => window.location.href = "/historico"}
+        className="bg-slate-700 px-3 py-2 rounded mb-4"
+      >
+        Ver histórico
+      </button>
+
       <div className="flex gap-2 mb-4">
         <input
           type="month"
