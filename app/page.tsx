@@ -9,7 +9,6 @@ import GraficoCategorias from "@/components/GraficoCategorias";
 import GraficoLinha from "@/components/GraficoLinha";
 
 import FabButton from "@/components/FabButton";
-import MetaFinanceira from "@/components/MetaFinanceira";
 import Insights from "@/components/Insights";
 import Modal from "@/components/Modal";
 import { useRecorrentes } from "@/hooks/useRecorrentes";
@@ -46,8 +45,6 @@ export default function Home() {
     excluir: excluirRec,
     editar: editarRec,
   } = useRecorrentes(user);
-
-  const meta = 5000;
 
   const formatar = (v: number) =>
     v.toLocaleString("pt-BR", {
@@ -98,7 +95,10 @@ export default function Home() {
   // 🔥 CONTAS DO MÊS
   const contasDoMes = recorrentes.map((r) => {
     const jaExiste = transacoesMes.find(
-      (t) => t.descricao === r.nome
+      (t) =>
+        t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase() &&
+        t.tipo === "saida" &&
+        t.valor > 0
     );
 
     return {
@@ -316,8 +316,6 @@ export default function Home() {
       <div className="bg-green-600 p-4 rounded-xl mb-4">
         <h1>{formatar(saldo)}</h1>
       </div>
-
-      <MetaFinanceira saldo={saldo} meta={meta} />
 
       <ListaRecorrentes
         lista={contasDoMes}
