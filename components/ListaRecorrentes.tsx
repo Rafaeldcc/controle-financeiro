@@ -27,6 +27,12 @@ export default function ListaRecorrentes({
                 Dia {r.dia} • R$ {Number(r.valor) || r.valorPadrao || 0}
               </p>
 
+              {r.parcelas && (
+                <p className="text-xs text-blue-400">
+                  {r.parcelaAtual || 1}/{r.parcelas}
+                </p>
+              )}
+
               {/* 🔥 INPUTS CORRIGIDOS */}
               <div className="flex gap-2 mt-1">
                 <input
@@ -69,7 +75,7 @@ export default function ListaRecorrentes({
 
             <div className="flex gap-2">
               <button
-                onClick={() => toggle(r.id, r.pago)}
+                onClick={() => onPagar(r)}
                 className={`px-3 py-1 rounded text-sm ${
                   r.pago
                     ? "bg-green-500"
@@ -78,7 +84,7 @@ export default function ListaRecorrentes({
                     : "bg-red-500"
                 }`}
               >
-                {r.pago ? "Pago" : atrasado ? "Atrasado" : "Pendente"}
+                {r.pago ? "Pago" : "Pagar"}
               </button>
 
               <button

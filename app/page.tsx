@@ -214,6 +214,7 @@ export default function Home() {
       return;
     }
 
+    // 🔥 cria transação (desconta do saldo)
     await adicionar({
       descricao: conta.nome,
       valor: Number(valorFinal),
@@ -221,8 +222,14 @@ export default function Home() {
       categoria: "Moradia",
       data: new Date(),
       mes: mesSelecionado,
+
       parcelas: parcelas,
-      parcelaAtual: 1,
+      parcelaAtual: (conta.parcelaAtual || 0) + 1,
+    });
+
+    // 🔥 atualiza progresso da recorrente
+    await editarRec(conta.id, {
+      parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
   }
 
