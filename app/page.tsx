@@ -96,17 +96,28 @@ export default function Home() {
     .reduce((acc, t) => acc + t.valor, 0);
 
   const contasDoMes = recorrentes.map((r) => {
-    const jaExiste = transacoesMes.find(
+    const transacoesDaConta = transacoes.filter(
       (t) =>
         t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase() &&
-        t.tipo === "saida" &&
-        t.valor > 0
+        t.tipo === "saida"
+    );
+
+    const jaExisteMes = transacoesMes.find(
+      (t) =>
+        t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase()
     );
 
     return {
       ...r,
-      valor: jaExiste ? jaExiste.valor : 0,
-      pago: !!jaExiste,
+
+      // 🔥 valor do mês
+      valor: jaExisteMes ? jaExisteMes.valor : r.valorPadrao || 0,
+
+      // 🔥 pago no mês atual
+      pago: !!jaExisteMes,
+
+      // 🔥 AQUI A MÁGICA
+      parcelaAtual: transacoesDaConta.length,
     };
   });
 
@@ -214,7 +225,6 @@ export default function Home() {
       return;
     }
 
-    // 🔥 cria transação (desconta do saldo)
     await adicionar({
       descricao: conta.nome,
       valor: Number(valorFinal),
@@ -222,10 +232,10 @@ export default function Home() {
       categoria: "Moradia",
       data: new Date(),
       mes: mesSelecionado,
-
       parcelas: parcelas,
       parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
+
 
     // 🔥 atualiza progresso da recorrente
     async function pagarConta(conta: any) {
