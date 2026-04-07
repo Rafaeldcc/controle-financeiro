@@ -89,37 +89,30 @@ export default function Home() {
 
   const entradas = transacoesMes
     .filter((t) => t.tipo === "entrada")
-    .reduce((acc, t) => acc + (t.valor || 0), 0);
+    .reduce((acc, t) => acc + t.valor, 0);
 
   const saidas = transacoesMes
     .filter((t) => t.tipo === "saida")
-    .reduce((acc, t) => acc + (t.valor || 0), 0);
+    .reduce((acc, t) => acc + t.valor, 0);
 
   const contasDoMes = recorrentes.map((r) => {
-    const transacoesDaConta = transacoes.filter(
+    const jaExiste = transacoesMes.find(
       (t) =>
-        (t.descricao || "").includes(r.nome || "") &&
-        t.tipo === "saida"
-    );
-
-    const jaExisteMes = transacoesMes.find(
-      (t) => (t.descricao || "").includes(r.nome || "")
+        t.descricao?.trim().toLowerCase() === r.nome?.trim().toLowerCase() &&
+        t.tipo === "saida" &&
+        t.valor > 0
     );
 
     return {
       ...r,
-      valor: jaExisteMes ? jaExisteMes.valor : r.valorPadrao || 0,
-      pago: !!jaExisteMes,
-      parcelaAtual: Math.min(
-        transacoesDaConta.length,
-        r.parcelas || transacoesDaConta.length || 1
-      ),
+      valor: jaExiste ? jaExiste.valor : 0,
+      pago: !!jaExiste,
     };
   });
 
   const totalRecorrente = contasDoMes
     .filter((r) => !r.pago)
-    .reduce((acc, r) => acc + (r.valor || 0), 0);
+    .reduce((acc, r) => acc + r.valor, 0);
 
   const saldo = entradas - saidas - totalRecorrente;
 
@@ -130,7 +123,7 @@ export default function Home() {
           categoria: t.categoria,
           valor: 0,
         };
-        acc[t.categoria].valor += t.valor || 0;
+        acc[t.categoria].valor += t.valor;
       }
       return acc;
     }, {})
@@ -141,7 +134,7 @@ export default function Home() {
   transacoesMes.forEach((t: any) => {
     const data = t.data?.seconds
       ? new Date(t.data.seconds * 1000)
-      : new Date(t.data || Date.now());
+      : new Date();
 
     const dia = data.getDate();
 
@@ -149,14 +142,13 @@ export default function Home() {
       dadosLinhaMap[dia] = { mes: dia, valor: 0 };
     }
 
-    dadosLinhaMap[dia].valor += t.valor || 0;
+    dadosLinhaMap[dia].valor += t.valor;
   });
 
   const dadosLinha = Object.values(dadosLinhaMap).sort(
     (a: any, b: any) => a.mes - b.mes
   );
 
-  // ✅ CORRIGIDO
   async function adicionarTransacao() {
     if (!valor || !categoria) {
       setMensagem("⚠️ Preencha os campos");
@@ -180,7 +172,7 @@ export default function Home() {
         categoria,
         data: new Date(),
         mes: mesSelecionado,
-        recorrenteId: editandoRec?.id || "",
+        recorrenteId: editandoRec?.id || null,
       });
     }
 
@@ -209,7 +201,34 @@ export default function Home() {
     setModalAberto(true);
   }
 
+  // 🔥 CORRIGIDO AQUI
   async function pagarConta(conta: any) {
+    const valorFinal =
+      conta.valorTemp || conta.valor || conta.valorPadrao;
+
+    const parcelas =
+      conta.parcelasTemp || conta.parcelas || 1;
+
+    if (!valorFinal || valorFinal <= 0) {
+      alert("Digite um valor antes de pagar");
+      return;
+    }
+
+    // 🔥 cria transação (desconta do saldo)
+    await adicionar({
+      descricao: conta.nome,
+      valor: Number(valorFinal),
+      tipo: "saida",
+      categoria: "Moradia",
+      data: new Date(),
+      mes: mesSelecionado,
+
+      parcelas: parcelas,
+      parcelaAtual: (conta.parcelaAtual || 0) + 1,
+    });
+
+    // 🔥 atualiza progresso da recorrente
+    async function pagarConta(conta: any) {
     const valorFinal =
       conta.valorTemp || conta.valor || conta.valorPadrao;
 
@@ -232,6 +251,7 @@ export default function Home() {
       parcelaAtual: (conta.parcelaAtual || 0) + 1,
     });
   }
+    }
 
   async function adicionarRecorrente() {
     if (!nomeRec || !diaRec) return;
@@ -239,9 +259,9 @@ export default function Home() {
     const dados = {
       nome: nomeRec,
       dia: Number(diaRec),
-      valorPadrao: valorRec ? Number(valorRec) : 0,
-      parcelas: parcelasRec ? Number(parcelasRec) : 1,
-    };
+      valorPadrao: valorRec ? Number(valorRec) : null,
+      parcelas: parcelasRec ? Number(parcelasRec) : null,
+    } as any;
 
     try {
       if (editandoRec) {
@@ -274,11 +294,11 @@ export default function Home() {
 
       const entradasFuturas = transacoesFuturas
         .filter((t) => t.tipo === "entrada")
-        .reduce((acc, t) => acc + (t.valor || 0), 0);
+        .reduce((acc, t) => acc + t.valor, 0);
 
       const saidasFuturas = transacoesFuturas
         .filter((t) => t.tipo === "saida")
-        .reduce((acc, t) => acc + (t.valor || 0), 0);
+        .reduce((acc, t) => acc + t.valor, 0);
 
       saldoAtual += entradasFuturas - saidasFuturas;
 
@@ -294,6 +314,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4">
+
       <MenuLateral aberto={menuAberto} fechar={() => setMenuAberto(false)} />
 
       <div className="flex justify-between mb-4">
@@ -302,13 +323,25 @@ export default function Home() {
         <button onClick={() => signOut(auth)}>Sair</button>
       </div>
 
-      <input
-        type="month"
-        value={mesSelecionado}
-        onChange={(e) => setMesSelecionado(e.target.value)}
-      />
+      <button
+        onClick={() => window.location.href = "/historico"}
+        className="bg-slate-700 px-3 py-2 rounded mb-4"
+      >
+        Ver histórico
+      </button>
 
-      <h1>{formatar(saldo)}</h1>
+      <div className="flex gap-2 mb-4">
+        <input
+          type="month"
+          value={mesSelecionado}
+          onChange={(e) => setMesSelecionado(e.target.value)}
+          className="bg-slate-800 text-white px-3 py-2 rounded"
+        />
+      </div>
+
+      <div className="bg-green-600 p-4 rounded-xl mb-4">
+        <h1>{formatar(saldo)}</h1>
+      </div>
 
       <ListaRecorrentes
         lista={contasDoMes}
@@ -317,6 +350,110 @@ export default function Home() {
         editar={abrirEdicaoRec}
         onPagar={pagarConta}
       />
+
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <GraficoCategorias dados={dadosCategorias} />
+        <GraficoLinha dados={dadosLinha} />
+      </div>
+
+      <Insights entradas={entradas} saidas={saidas} />
+
+      <div className="bg-slate-800 p-3 rounded-xl mt-4">
+        <p className="font-bold mb-2">📊 Previsão</p>
+
+        {previsao.map((p) => (
+          <div key={p.mes} className="flex justify-between">
+            <span>{p.mes}</span>
+            <span>{formatar(p.saldo)}</span>
+          </div>
+        ))}
+      </div>
+
+      <FabButton onClick={() => setModalAberto(true)} />
+
+      <Modal aberto={modalAberto} fechar={() => setModalAberto(false)}>
+        <h2 className="font-bold mb-2">
+          {editando ? "Editar Transação" : "Nova Transação"}
+        </h2>
+
+        <input
+          placeholder="Valor"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <select
+          value={tipo}
+          onChange={(e) => {
+            setTipo(e.target.value);
+            setCategoria("");
+          }}
+          className="bg-slate-700 p-2 w-full mb-2"
+        >
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        >
+          <option value="">Categoria</option>
+          {(tipo === "entrada" ? categoriasEntrada : categoriasSaida).map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+
+        <input
+          placeholder="Descrição"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <button onClick={adicionarTransacao} className="bg-green-500 w-full p-2 mb-4">
+          {editando ? "Atualizar" : "Salvar"}
+        </button>
+
+        <hr className="my-3" />
+
+        <h2 className="font-bold mb-2">Despesa Fixa</h2>
+
+        <input
+          placeholder="Nome"
+          value={nomeRec}
+          onChange={(e) => setNomeRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Dia"
+          value={diaRec}
+          onChange={(e) => setDiaRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Valor (opcional)"
+          value={valorRec}
+          onChange={(e) => setValorRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <input
+          placeholder="Parcelas (opcional)"
+          value={parcelasRec}
+          onChange={(e) => setParcelasRec(e.target.value)}
+          className="bg-slate-700 p-2 w-full mb-2"
+        />
+
+        <button onClick={adicionarRecorrente} className="bg-blue-500 w-full p-2">
+          Salvar Recorrente
+        </button>
+      </Modal>
+
     </div>
   );
 }
