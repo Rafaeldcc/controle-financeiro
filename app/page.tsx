@@ -367,39 +367,6 @@ export default function Home() {
 
       <Insights entradas={entradas} saidas={saidas} />
 
-      {/* 
-      <div className="space-y-2">
-        {transacoesMes.map((t) => (
-          <div key={t.id}>
-            ...
-          </div>
-        ))}
-      </div>
-      */}
-            <div>
-              <p className="font-bold">{t.descricao || "Sem descrição"}</p>
-              <p className="text-xs opacity-60">{t.categoria}</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <p className={t.tipo === "entrada" ? "text-green-400" : "text-red-400"}>
-                {formatar(t.valor)}
-              </p>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  excluir(t.id);
-                }}
-                className="bg-red-500 px-2 rounded"
-              >
-                X
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div className="bg-slate-800 p-3 rounded-xl mt-4">
         <p className="font-bold mb-2">📊 Previsão</p>
 
